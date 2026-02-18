@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![VTxMus Logo](public/favicon.png)
+![VTxMus Logo](public/favicon.ico)
 
 一个现代化、优雅的网易云音乐客户端，基于 Vue 3 + TypeScript 构建
 
