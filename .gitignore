@@ -1,0 +1,60 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 测试
+coverage/
+*.log
+cypress/
+
+# 生产构建
+dist/
+dist-ssr/
+*.local
+release/
+
+# Electron
+electron/
+
+# 编辑器
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 敏感配置（包含 Cookie）
+cookie.txt
+login_cookie.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# AI 相关
+.ai/
+
+# Markdown 文件（仅保留 README）
+*.md
+!README.md
+!README_CN.md
+
+# 临时文件
+*.tmp
+*.temp
