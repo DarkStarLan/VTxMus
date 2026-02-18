@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![VTxMus Logo](public/favicon.png)
+![VTxMus Logo](public/favicon.ico)
 
 A modern, elegant NetEase Cloud Music client built with Vue 3 + TypeScript
 
