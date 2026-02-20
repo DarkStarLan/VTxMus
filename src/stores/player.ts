@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { Song } from '@/api/netease'
-import { getSongUrl } from '@/api/netease'
+import { getSongUrl, getHotSongs } from '@/api/netease'
 import { loadConfig, saveConfig } from '@/utils/storage'
 import { QualityLevel } from '@/config/api'
 
-export type PlayMode = 'sequence' | 'loop' | 'random'
+export type PlayMode = 'sequence' | 'loop' | 'random' | 'recommend'
 export type MusicQuality = 'standard' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster'
 
 export const usePlayerStore = defineStore('player', () => {
@@ -35,10 +35,22 @@ export const usePlayerStore = defineStore('player', () => {
   })
 
   const hasNext = computed(() => {
+    // 推荐模式下始终可以点击下一首
+    if (playMode.value === 'recommend') {
+      return true
+    }
+    // 顺序播放模式下，只要有歌曲就可以点击下一首（循环到第一首）
+    if (playMode.value === 'sequence') {
+      return playlist.value.length > 0
+    }
     return playlist.value.length > 0 && currentIndex.value < playlist.value.length - 1
   })
 
   const hasPrev = computed(() => {
+    // 顺序播放模式下，只要有歌曲就可以点击上一首（循环到最后一首）
+    if (playMode.value === 'sequence') {
+      return playlist.value.length > 0
+    }
     return playlist.value.length > 0 && currentIndex.value > 0
   })
 
@@ -103,7 +115,22 @@ export const usePlayerStore = defineStore('player', () => {
       nextIndex = Math.floor(Math.random() * playlist.value.length)
     } else if (playMode.value === 'loop') {
       nextIndex = currentIndex.value // 单曲循环
+    } else if (playMode.value === 'recommend') {
+      // 推荐模式：先检查播放列表是否有下一首
+      if (currentIndex.value < playlist.value.length - 1) {
+        // 有下一首，播放下一首
+        nextIndex = currentIndex.value + 1
+        const nextSong = playlist.value[nextIndex]
+        if (nextSong) {
+          playSong(nextSong, nextIndex)
+        }
+      } else {
+        // 没有下一首，播放随机热门歌曲
+        playRecommendSong()
+      }
+      return
     } else {
+      // 顺序播放模式：循环到第一首
       nextIndex = (currentIndex.value + 1) % playlist.value.length
     }
 
@@ -113,9 +140,66 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // 播放推荐的热门歌曲
+  async function playRecommendSong() {
+    try {
+      // 获取热门歌曲列表
+      const hotSongs = await getHotSongs(100)
+
+      if (hotSongs.length === 0) {
+        console.warn('未获取到热门歌曲，切换到顺序播放')
+        // 如果获取失败，回退到顺序播放
+        const nextIndex = (currentIndex.value + 1) % playlist.value.length
+        const nextSong = playlist.value[nextIndex]
+        if (nextSong) {
+          playSong(nextSong, nextIndex)
+        }
+        return
+      }
+
+      // 过滤掉当前正在播放的歌曲
+      const filteredSongs = hotSongs.filter(song => song.id !== currentSong.value?.id)
+
+      if (filteredSongs.length === 0) {
+        console.warn('所有热门歌曲都已播放，重新获取')
+        // 如果所有歌曲都播放过了，就不过滤
+        const randomIndex = Math.floor(Math.random() * hotSongs.length)
+        const randomSong = hotSongs[randomIndex]
+
+        // 将推荐的歌曲添加到播放列表
+        if (randomSong) {
+          addToPlaylist(randomSong)
+          const newIndex = playlist.value.findIndex(s => s.id === randomSong.id)
+          playSong(randomSong, newIndex)
+        }
+        return
+      }
+
+      // 随机选择一首热门歌曲
+      const randomIndex = Math.floor(Math.random() * filteredSongs.length)
+      const randomSong = filteredSongs[randomIndex]
+
+      // 将推荐的歌曲添加到播放列表
+      if (randomSong) {
+        addToPlaylist(randomSong)
+        const newIndex = playlist.value.findIndex(s => s.id === randomSong.id)
+        playSong(randomSong, newIndex)
+      }
+    } catch (error) {
+      console.error('播放推荐歌曲失败:', error)
+      // 出错时回退到顺序播放
+      const nextIndex = (currentIndex.value + 1) % playlist.value.length
+      const nextSong = playlist.value[nextIndex]
+      if (nextSong) {
+        playSong(nextSong, nextIndex)
+      }
+    }
+  }
+
   function prevSong() {
     if (playlist.value.length === 0) return
 
+    // 顺序播放模式：循环到最后一首
     const prevIndex = currentIndex.value - 1 < 0
       ? playlist.value.length - 1
       : currentIndex.value - 1
@@ -127,7 +211,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function togglePlayMode() {
-    const modes: PlayMode[] = ['sequence', 'loop', 'random']
+    const modes: PlayMode[] = ['sequence', 'loop', 'random', 'recommend']
     const currentModeIndex = modes.indexOf(playMode.value)
     const nextMode = modes[(currentModeIndex + 1) % modes.length]
     if (nextMode) {

@@ -26,6 +26,16 @@ const router = createRouter({
       path: '/play',
       name: 'play',
       component: () => import('@/views/PlayPage.vue')
+    },
+    {
+      path: '/recommend-songs',
+      name: 'recommend-songs',
+      component: () => import('@/views/RecommendSongsPage.vue')
+    },
+    {
+      path: '/playlists',
+      name: 'playlists',
+      component: () => import('@/views/PlaylistsPage.vue')
     }
   ],
 })

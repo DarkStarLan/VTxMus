@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![VTxMus Logo](public/favicon.png)
+![VTxMus Logo](public/favicon.ico)
 
 A modern, elegant NetEase Cloud Music client built with Vue 3 + TypeScript
 
@@ -18,8 +18,10 @@ A modern, elegant NetEase Cloud Music client built with Vue 3 + TypeScript
 - **Favorites** - Save your favorite songs locally
 - **Modern UI** - Beautiful dark gradient theme with smooth animations
 - **Playback Modes** - Sequential, single loop, and random playback
-- **Responsive Design** - Works seamlessly on different screen sizes
+- **Fully Responsive** - Perfect experience on desktop, tablet, and mobile devices
+- **Touch Optimized** - Enhanced touch interactions for mobile devices
 - **Desktop App** - Available as Electron desktop application
+- **Production Ready** - Optimized for deployment with automatic API routing
 
 ## Quick Start
 
@@ -111,6 +113,8 @@ Available quality levels:
 npm run build
 ```
 
+The built files will be in the `dist` directory.
+
 ### Desktop Application
 
 ```bash
@@ -120,6 +124,47 @@ npm run electron:build:win
 # All platforms
 npm run electron:build
 ```
+
+## Deployment
+
+### Deploy to Production Server
+
+This project is optimized for deployment to production servers with automatic API routing that works on both mobile and desktop devices.
+
+**Quick Deploy:**
+
+```bash
+# 1. Build the project
+npm run build
+
+# 2. Verify the build
+./verify-build.bat  # Windows
+./verify-build.sh   # Linux/Mac
+
+# 3. Upload to server and configure
+# See DEPLOY_GUIDE.md for detailed instructions
+```
+
+**Key Features for Production:**
+- ✅ Automatic API routing (no hardcoded localhost)
+- ✅ Works on mobile and desktop browsers
+- ✅ Subdirectory deployment support (e.g., `/VTxMus/`)
+- ✅ Nginx configuration included
+- ✅ PM2 process management
+
+**Documentation:**
+- 📖 [Complete Deployment Guide](./DEPLOY_GUIDE.md)
+- ✅ [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md)
+- 📝 [Changes Summary](./CHANGES_SUMMARY.md)
+- ⚙️ [Nginx Configuration Example](./nginx.conf.example)
+
+### Responsive Design
+
+The application is fully responsive with optimized layouts for:
+- 📱 **Mobile** (≤ 768px): Single column, bottom player, drawer-style playlist
+- 📱 **Tablet** (768px - 1024px): Two-column layout
+- 💻 **Desktop** (> 1024px): Full multi-column layout
+- 👆 **Touch Devices**: Minimum 44x44px touch targets, optimized gestures
 
 ## Development
 

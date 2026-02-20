@@ -2,7 +2,7 @@
   <div class="recommend-section">
     <!-- 今日推荐 -->
     <div class="section-block">
-      <div class="section-header">
+      <div class="section-header" @click="goToRecommendSongs">
         <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
           <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm50.7-186.9L162.4 380.6c-19.4 7.5-38.5-11.6-31-31l55.5-144.3c3.3-8.5 9.9-15.1 18.4-18.4l144.3-55.5c19.4-7.5 38.5 11.6 31 31L325.1 306.7c-3.3 8.5-9.9 15.1-18.4 18.4zM288 256a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/>
         </svg>
@@ -43,7 +43,7 @@
 
     <!-- 精选歌单 -->
     <div class="section-block">
-      <div class="section-header">
+      <div class="section-header" @click="goToPlaylists">
         <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
           <path d="M0 96C0 60.7 28.7 32 64 32l384 0c35.3 0 64 28.7 64 64l0 320c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6l96 0 32 0 208 0c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
         </svg>
@@ -116,7 +116,7 @@ onMounted(async () => {
 async function loadRecommendSongs() {
   loadingRecommend.value = true
   try {
-    const songs = await getRecommendSongs(10)
+    const songs = await getRecommendSongs(16)
     recommendSongs.value = songs
   } catch (error) {
     console.error('加载今日推荐失败:', error)
@@ -128,7 +128,7 @@ async function loadRecommendSongs() {
 async function loadPlaylists() {
   loadingPlaylists.value = true
   try {
-    const result = await getRecommendPlaylists(12)
+    const result = await getRecommendPlaylists(14)
     playlists.value = result
   } catch (error) {
     console.error('加载精选歌单失败:', error)
@@ -169,6 +169,14 @@ function formatPlayCount(count: number): string {
   }
   return count.toString()
 }
+
+function goToRecommendSongs() {
+  router.push('/recommend-songs')
+}
+
+function goToPlaylists() {
+  router.push('/playlists')
+}
 </script>
 
 <style scoped>
@@ -188,12 +196,24 @@ function formatPlayCount(count: number): string {
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content;
+}
+
+.section-header:hover {
+  transform: translateX(8px);
+}
+
+.section-header:hover .section-icon {
+  transform: scale(1.1);
 }
 
 .section-icon {
   width: 28px;
   height: 28px;
   fill: #8ABEB9;
+  transition: all 0.3s ease;
 }
 
 .section-header h2 {
@@ -251,6 +271,7 @@ function formatPlayCount(count: number): string {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .song-cover {
@@ -260,7 +281,9 @@ function formatPlayCount(count: number): string {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: all 0.3s ease;
+  display: block;
 }
 
 .song-card:hover .song-cover {
@@ -339,6 +362,7 @@ function formatPlayCount(count: number): string {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .playlist-cover {
@@ -348,7 +372,9 @@ function formatPlayCount(count: number): string {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: all 0.3s ease;
+  display: block;
 }
 
 .playlist-card:hover .playlist-cover {
@@ -401,6 +427,162 @@ function formatPlayCount(count: number): string {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .recommend-section {
+    gap: 32px;
+  }
+
+  .section-block {
+    gap: 16px;
+  }
+
+  .section-header {
+    gap: 10px;
+  }
+
+  .section-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+  }
+
+  .songs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+
+  .playlists-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+
+  .song-cover-wrapper,
+  .playlist-cover-wrapper {
+    border-radius: 10px;
+  }
+
+  .play-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .song-info,
+  .playlist-info {
+    margin-top: 10px;
+  }
+
+  .song-name,
+  .playlist-name {
+    font-size: 13px;
+  }
+
+  .song-artist {
+    font-size: 11px;
+  }
+
+  .play-count {
+    top: 6px;
+    right: 6px;
+    padding: 3px 6px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+
+  .play-count svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .loading-state {
+    padding: 40px 20px;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .recommend-section {
+    gap: 28px;
+  }
+
+  .section-block {
+    gap: 14px;
+  }
+
+  .section-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
+  }
+
+  .songs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .playlists-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .song-cover-wrapper,
+  .playlist-cover-wrapper {
+    border-radius: 8px;
+  }
+
+  .play-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .song-info,
+  .playlist-info {
+    margin-top: 8px;
+  }
+
+  .song-name,
+  .playlist-name {
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  .song-artist {
+    font-size: 10px;
+  }
+
+  .play-count {
+    top: 5px;
+    right: 5px;
+    padding: 2px 5px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+
+  .play-count svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .loading-state {
+    padding: 30px 15px;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
   }
 }
 </style>

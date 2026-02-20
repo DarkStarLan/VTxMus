@@ -77,6 +77,10 @@ function goBack() {
   router.push('/')
 }
 
+function closePlaylist() {
+  playerStore.showPlaylist = false
+}
+
 onMounted(() => {
   const query = route.query.q as string
   if (query) {
@@ -131,22 +135,15 @@ onUnmounted(() => {
             <p>没有找到相关结果</p>
           </div>
           <div v-else class="results-wrapper">
-            <SongList :songs="searchResults" />
-            <div v-if="loadingMore" class="loading-more">
-              <svg class="spinner-icon-small" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                <path fill="currentColor" d="M222.7 32.1c5 16.9-4.6 34.8-21.5 39.8-79.3 23.6-137.1 97.1-137.1 184.1 0 106 86 192 192 192s192-86 192-192c0-86.9-57.8-160.4-137.1-184.1-16.9-5-26.6-22.9-21.5-39.8s22.9-26.6 39.8-21.5C434.9 42.1 512 140 512 256 512 397.4 397.4 512 256 512S0 397.4 0 256c0-116 77.1-213.9 182.9-245.4 16.9-5 34.8 4.6 39.8 21.5z"/>
-              </svg>
-              <span>加载中...</span>
-            </div>
-            <div v-else-if="!hasMore" class="no-more">
-              <span>没有更多结果了</span>
-            </div>
+            <SongList :songs="searchResults" :show-loading-more="loadingMore" :show-no-more="!hasMore && !loadingMore" />
           </div>
         </div>
       </div>
 
-      <div v-if="playerStore.showPlaylist" class="playlist-section">
-        <Playlist />
+      <div v-if="playerStore.showPlaylist" class="playlist-overlay" @click.self="closePlaylist">
+        <div class="playlist-section">
+          <Playlist />
+        </div>
       </div>
     </div>
   </div>
@@ -292,6 +289,18 @@ onUnmounted(() => {
   height: 100%;
 }
 
+.playlist-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
 .playlist-section {
   position: fixed;
   right: 40px;
@@ -300,7 +309,7 @@ onUnmounted(() => {
   width: 380px;
   animation: slideInRight 0.4s ease;
   overflow: hidden;
-  z-index: 100;
+  z-index: 101;
   background: rgba(26, 42, 50, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
@@ -342,38 +351,6 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
-.loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-}
-
-.spinner-icon-small {
-  width: 24px;
-  height: 24px;
-  fill: #8ABEB9;
-  animation: spin 1s linear infinite;
-}
-
-.no-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
-}
-
-.no-more span {
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-}
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -382,6 +359,15 @@ onUnmounted(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -399,6 +385,106 @@ onUnmounted(() => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 平板布局适配 (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .search-results-section {
+    padding-bottom: 140px;
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .search-header {
+    flex-direction: row;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .back-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .back-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .search-info h2 {
+    font-size: 16px;
+  }
+
+  .search-info p {
+    font-size: 12px;
+  }
+
+  .playlist-toggle {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .search-content {
+    padding: 0 16px 16px 16px;
+  }
+
+  .search-results-section {
+    padding-top: 20px;
+    padding-bottom: 180px;
+  }
+
+  .playlist-overlay {
+    z-index: 100;
+  }
+
+  .playlist-section {
+    position: fixed;
+    right: 0;
+    left: 0;
+    top: auto;
+    bottom: 80px;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    animation: slideInUp 0.3s ease;
+    z-index: 101;
+  }
+
+  .loading, .no-results {
+    padding: 60px 20px;
+  }
+
+  .spinner-icon, .no-results-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-header {
+    padding: 10px 12px;
+  }
+
+  .back-btn {
+    padding: 6px 10px;
+  }
+
+  .search-info h2 {
+    font-size: 14px;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

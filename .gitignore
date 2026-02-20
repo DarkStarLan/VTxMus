@@ -55,6 +55,15 @@ __pycache__/
 !README.md
 !README_CN.md
 
+# 脚本和文本文件
+*.txt
+*.bat
+*.sh
+
+# Git 配置文件
+.cursorignore
+.gitattributes
+
 # 临时文件
 *.tmp
 *.temp

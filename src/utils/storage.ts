@@ -2,7 +2,7 @@
 
 export interface UserConfig {
   volume: number
-  playMode: 'sequence' | 'loop' | 'random'
+  playMode: 'sequence' | 'loop' | 'random' | 'recommend'
   currentSong: {
     id: number
     name: string

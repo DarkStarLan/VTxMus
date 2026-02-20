@@ -208,5 +208,85 @@ function removeFromPlaylist(index: number) {
   fill: rgba(255, 255, 255, 1);
   transform: scale(1.2);
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .playlist-header h3 {
+    font-size: 16px;
+  }
+
+  .clear-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .playlist-item {
+    padding: 10px;
+  }
+
+  .item-name {
+    font-size: 13px;
+  }
+
+  .item-artist {
+    font-size: 11px;
+  }
+
+  .remove-btn {
+    width: 32px;
+    height: 32px;
+    padding: 8px;
+  }
+
+  .remove-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .playlist-header h3 {
+    font-size: 15px;
+  }
+
+  .clear-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .playlist-item {
+    padding: 8px;
+  }
+
+  .item-name {
+    font-size: 12px;
+  }
+
+  .item-artist {
+    font-size: 10px;
+  }
+
+  .empty {
+    padding: 30px 20px;
+  }
+
+  .empty-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .remove-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .playlist-item:active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
 </style>
+
 

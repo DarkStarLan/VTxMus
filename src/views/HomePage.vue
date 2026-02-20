@@ -27,6 +27,10 @@ function handleOpenPlaylist(id: number) {
 function closePlaylistModal() {
   selectedPlaylistId.value = null
 }
+
+function closePlaylist() {
+  playerStore.showPlaylist = false
+}
 </script>
 
 <template>
@@ -66,8 +70,10 @@ function closePlaylistModal() {
         </div>
       </div>
 
-      <div v-if="playerStore.showPlaylist" class="playlist-section">
-        <Playlist />
+      <div v-if="playerStore.showPlaylist" class="playlist-overlay" @click.self="closePlaylist">
+        <div class="playlist-section">
+          <Playlist />
+        </div>
       </div>
     </div>
 
@@ -198,6 +204,18 @@ function closePlaylistModal() {
   display: none;
 }
 
+.playlist-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
 .playlist-section {
   position: fixed;
   right: 40px;
@@ -206,7 +224,7 @@ function closePlaylistModal() {
   width: 380px;
   animation: slideInRight 0.4s ease;
   overflow: hidden;
-  z-index: 100;
+  z-index: 101;
   background: rgba(26, 42, 50, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
@@ -304,6 +322,150 @@ function closePlaylistModal() {
   }
 }
 
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    padding: 12px 16px;
+    gap: 10px;
+    align-items: stretch;
+  }
 
+  .header-search {
+    max-width: 100%;
+    order: 2;
+  }
+
+  .header-right {
+    order: 1;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .favorites-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .favorites-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .playlist-toggle {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .app-content {
+    padding: 0 16px 16px 16px;
+  }
+
+  .content-section {
+    padding-top: 16px;
+    padding-bottom: 200px;
+    gap: 24px;
+  }
+
+  .playlist-overlay {
+    z-index: 100;
+  }
+
+  .playlist-section {
+    position: fixed;
+    right: 0;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-height: 65vh;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    animation: slideInUp 0.3s ease;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    z-index: 101;
+  }
+
+  .welcome-banner {
+    padding: 16px 16px 24px;
+  }
+
+  .welcome-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  .welcome-banner h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .welcome-banner p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .favorites-btn {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .favorites-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .playlist-toggle {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .content-section {
+    padding-top: 12px;
+    padding-bottom: 220px;
+    gap: 20px;
+  }
+
+  .welcome-banner {
+    padding: 12px 12px 20px;
+  }
+
+  .welcome-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+  }
+
+  .welcome-banner h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .welcome-banner p {
+    font-size: 13px;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>
 

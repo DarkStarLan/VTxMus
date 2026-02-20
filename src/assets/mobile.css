@@ -1,0 +1,1370 @@
+/**
+ * 移动端专用样式 - 完全重构版
+ * 按照手机操作习惯设计，不影响电脑布局
+ */
+
+/* ==================== 全局移动端基础 ==================== */
+.mobile-layout {
+  overflow-x: hidden;
+  max-width: 100vw;
+  /* 基础字体大小，使用 clamp 实现动态缩放 */
+  font-size: clamp(13px, 3.5vw, 16px);
+}
+
+.mobile-layout body {
+  font-size: clamp(13px, 3.5vw, 16px);
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.mobile-layout input,
+.mobile-layout textarea,
+.mobile-layout select {
+  /* 输入框固定 16px 防止 iOS 自动缩放 */
+  font-size: 16px !important;
+}
+
+/* ==================== 动态字体大小系统 ==================== */
+/* 超大屏手机 (≥414px，如 iPhone Pro Max) */
+@media (min-width: 414px) {
+  .mobile-layout {
+    font-size: 15px;
+  }
+
+  .mobile-layout body {
+    font-size: 15px;
+  }
+}
+
+/* 大屏手机 (390px-413px，如 iPhone 14) */
+@media (min-width: 390px) and (max-width: 413px) {
+  .mobile-layout {
+    font-size: 14.5px;
+  }
+
+  .mobile-layout body {
+    font-size: 14.5px;
+  }
+}
+
+/* 标准手机 (360px-389px，如大多数 Android) */
+@media (min-width: 360px) and (max-width: 389px) {
+  .mobile-layout {
+    font-size: 14px;
+  }
+
+  .mobile-layout body {
+    font-size: 14px;
+  }
+}
+
+/* 小屏手机 (320px-359px，如 iPhone SE) */
+@media (min-width: 320px) and (max-width: 359px) {
+  .mobile-layout {
+    font-size: 13px;
+  }
+
+  .mobile-layout body {
+    font-size: 13px;
+  }
+}
+
+/* 超小屏 (<320px) */
+@media (max-width: 319px) {
+  .mobile-layout {
+    font-size: 12px;
+  }
+
+  .mobile-layout body {
+    font-size: 12px;
+  }
+}
+
+/* ==================== 移动端首页 ==================== */
+.mobile-layout .home-page {
+  padding-bottom: 0 !important;
+}
+
+/* 移动端顶部导航栏 */
+.mobile-layout .app-header {
+  position: sticky !important;
+  top: 0 !important;
+  flex-direction: column !important;
+  padding: 12px 16px !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  z-index: 1002 !important;
+  background: rgba(26, 42, 50, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.mobile-layout .header-right {
+  order: 1 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+.mobile-layout .header-search {
+  order: 2 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.mobile-layout .favorites-btn,
+.mobile-layout .playlist-toggle {
+  flex: 1 !important;
+  justify-content: center !important;
+  padding: 12px 16px !important;
+  font-size: clamp(13px, 3.5vw, 15px) !important;
+  min-height: 48px !important;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+}
+
+.mobile-layout .favorites-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* 移动端内容区域 */
+.mobile-layout .app-content {
+  padding: 0 !important;
+  flex-direction: column !important;
+}
+
+.mobile-layout .content-section {
+  padding: 16px 16px 180px 16px !important;
+  gap: 24px !important;
+}
+
+/* 移动端欢迎横幅 */
+.mobile-layout .welcome-banner {
+  padding: 24px 16px !important;
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-radius: 16px !important;
+  margin-bottom: 8px !important;
+}
+
+.mobile-layout .welcome-icon {
+  width: 72px !important;
+  height: 72px !important;
+  margin-bottom: 16px !important;
+}
+
+.mobile-layout .welcome-banner h2 {
+  font-size: clamp(22px, 6vw, 28px) !important;
+  margin-bottom: 8px !important;
+}
+
+.mobile-layout .welcome-banner p {
+  font-size: clamp(14px, 3.8vw, 16px) !important;
+}
+
+/* ==================== 移动端推荐区域 ==================== */
+.mobile-layout .recommend-section {
+  padding: 0 !important;
+}
+
+.mobile-layout .recommend-section h3 {
+  font-size: clamp(18px, 5vw, 22px) !important;
+  padding: 0 4px 16px !important;
+  margin: 0 !important;
+}
+
+.mobile-layout .recommend-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+}
+
+.mobile-layout .playlist-card {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.mobile-layout .playlist-cover {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.mobile-layout .playlist-info {
+  padding: 12px !important;
+}
+
+.mobile-layout .playlist-name {
+  font-size: clamp(13px, 3.5vw, 15px) !important;
+  line-height: 1.4 !important;
+  margin-bottom: 6px !important;
+}
+
+.mobile-layout .playlist-count {
+  font-size: clamp(11px, 3vw, 13px) !important;
+}
+
+/* ==================== 移动端播放列表（底部抽屉） ==================== */
+.mobile-layout .playlist-section {
+  position: fixed !important;
+  right: 0 !important;
+  left: 0 !important;
+  top: auto !important;
+  bottom: 160px !important;
+  width: 100% !important;
+  max-height: min(calc(100vh - 320px), 50vh) !important;
+  border-radius: 20px 20px 0 0 !important;
+  padding: 20px 16px !important;
+  padding-bottom: 20px !important;
+  animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 1000 !important;
+  background: rgba(26, 42, 50, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* 超小屏手机优化 (高度 ≤ 667px，如 iPhone SE, iPhone 6/7/8) */
+@media (max-height: 667px) {
+  .mobile-layout .playlist-section {
+    max-height: min(calc(100vh - 280px), 40vh) !important;
+    padding: 16px 12px !important;
+  }
+}
+
+/* 极小屏手机优化 (高度 ≤ 568px，如 iPhone SE 1代) */
+@media (max-height: 568px) {
+  .mobile-layout .playlist-section {
+    max-height: min(calc(100vh - 260px), 35vh) !important;
+    padding: 12px 12px !important;
+  }
+}
+
+/* 大屏手机优化 (高度 ≥ 844px，如 iPhone 14 Pro) */
+@media (min-height: 844px) {
+  .mobile-layout .playlist-section {
+    max-height: min(calc(100vh - 340px), 55vh) !important;
+  }
+}
+
+/* 超大屏手机优化 (高度 ≥ 926px，如 iPhone 14 Pro Max) */
+@media (min-height: 926px) {
+  .mobile-layout .playlist-section {
+    max-height: min(calc(100vh - 360px), 60vh) !important;
+  }
+}
+
+.mobile-layout .playlist-section::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+/* 播放列表面板 */
+.mobile-layout .playlist-panel {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding-top: 12px !important;
+}
+
+/* 播放列表头部 */
+.mobile-layout .playlist-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 16px !important;
+  flex-shrink: 0 !important;
+  padding: 0 4px !important;
+}
+
+.mobile-layout .playlist-header h3 {
+  font-size: clamp(16px, 4.5vw, 18px) !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  margin: 0 !important;
+}
+
+.mobile-layout .clear-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: clamp(12px, 3.2vw, 13px) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.mobile-layout .clear-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* 播放列表内容区域 */
+.mobile-layout .playlist-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 4px !important;
+  min-height: 0 !important;
+}
+
+.mobile-layout .playlist-content::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.mobile-layout .playlist-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 2px !important;
+}
+
+.mobile-layout .playlist-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 2px !important;
+}
+
+/* 播放列表项 */
+.mobile-layout .playlist-items {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding-bottom: 24px !important;
+}
+
+.mobile-layout .playlist-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  min-height: 60px !important;
+}
+
+.mobile-layout .playlist-item:active {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mobile-layout .playlist-item.active {
+  background: rgba(138, 190, 185, 0.2) !important;
+  border-left: 3px solid #8ABEB9 !important;
+}
+
+.mobile-layout .item-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding-right: 12px !important;
+}
+
+.mobile-layout .item-name {
+  font-size: clamp(13px, 3.5vw, 14px) !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  margin-bottom: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.mobile-layout .item-artist {
+  font-size: clamp(11px, 3vw, 12px) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.mobile-layout .remove-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  flex-shrink: 0 !important;
+}
+
+.mobile-layout .remove-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: rgba(255, 255, 255, 0.9) !important;
+}
+
+.mobile-layout .remove-btn:active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: scale(0.95) !important;
+}
+
+/* 空状态 */
+.mobile-layout .playlist-content .empty {
+  text-align: center !important;
+  padding: 40px 20px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.mobile-layout .empty-icon {
+  width: 56px !important;
+  height: 56px !important;
+  fill: rgba(138, 190, 185, 0.5) !important;
+  display: block !important;
+  margin: 0 auto 12px !important;
+}
+
+/* ==================== 移动端播放器（底部固定） ==================== */
+.mobile-layout .music-player {
+  padding: 0 !important;
+  background: rgba(26, 42, 50, 0.98) !important;
+  backdrop-filter: blur(30px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  z-index: 1001 !important;
+}
+
+.mobile-layout .player-content {
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 12px 16px !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 歌曲信息区域 */
+.mobile-layout .song-info {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 12px 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  position: relative !important;
+  justify-content: center !important;
+}
+
+.mobile-layout .song-info::after {
+  content: '' !important;
+  width: 56px !important;
+  height: 56px !important;
+  flex-shrink: 0 !important;
+  visibility: hidden !important;
+}
+
+.mobile-layout .song-info:hover {
+  background: transparent !important;
+}
+
+.mobile-layout .album-cover {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+.mobile-layout .info-text {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.mobile-layout .song-name {
+  font-size: clamp(14px, 3.8vw, 16px) !important;
+  font-weight: 600 !important;
+  max-width: 100% !important;
+  margin-bottom: 4px !important;
+}
+
+.mobile-layout .artist-name {
+  font-size: clamp(12px, 3.2vw, 14px) !important;
+  max-width: 100% !important;
+  opacity: 0.7 !important;
+}
+
+/* 播放控制区域 */
+.mobile-layout .player-controls {
+  width: 100% !important;
+  gap: 12px !important;
+}
+
+.mobile-layout .control-buttons {
+  gap: 8px !important;
+  justify-content: center !important;
+  margin-bottom: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+/* 隐藏移动端不需要的按钮 */
+.mobile-layout .share-btn,
+.mobile-layout .mode-btn {
+  display: none !important;
+}
+
+/* 移动端显示设置按钮 */
+.mobile-layout .settings-selector {
+  display: block !important;
+}
+
+/* 移动端隐藏音质按钮 */
+.mobile-layout .quality-selector {
+  display: none !important;
+}
+
+/* 移动端隐藏桌面端的音量控制 */
+.mobile-layout .right-controls .volume-control {
+  display: none !important;
+}
+
+/* 移动端播放列表按钮移到控制按钮区域 */
+.mobile-layout .right-controls {
+  display: none !important;
+}
+
+/* 在控制按钮区域显示播放列表按钮 */
+.mobile-layout .control-buttons .playlist-btn {
+  display: flex !important;
+  order: 10 !important;
+  padding: 10px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  border-radius: 50% !important;
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mobile-layout .control-buttons .playlist-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.mobile-layout .control-buttons .playlist-btn.active {
+  background: rgba(138, 190, 185, 0.2) !important;
+  color: #8ABEB9 !important;
+}
+
+.mobile-layout .control-buttons .playlist-btn .icon-svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* 移动端歌名和歌手跑马灯效果 */
+.mobile-layout .song-name.marquee,
+.mobile-layout .artist-name.marquee {
+  overflow: hidden !important;
+  position: relative !important;
+  width: 100% !important;
+  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent) !important;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent) !important;
+}
+
+.mobile-layout .song-name.marquee span,
+.mobile-layout .artist-name.marquee span {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  animation: marquee-mobile 15s linear infinite !important;
+  will-change: transform !important;
+}
+
+.mobile-layout .song-name.marquee span::after,
+.mobile-layout .artist-name.marquee span::after {
+  content: '   •   ' attr(data-text) !important;
+}
+
+@keyframes marquee-mobile {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.mobile-layout .control-btn,
+.mobile-layout .fav-btn {
+  padding: 10px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  border-radius: 50% !important;
+}
+
+.mobile-layout .control-btn .icon-svg,
+.mobile-layout .fav-btn .icon-svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.mobile-layout .play-btn {
+  width: 56px !important;
+  height: 56px !important;
+  margin: 0 8px !important;
+  box-shadow: 0 4px 16px rgba(138, 190, 185, 0.5) !important;
+}
+
+.mobile-layout .play-btn .icon-svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* 进度条区域 */
+.mobile-layout .progress-bar {
+  gap: 10px !important;
+  margin-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.mobile-layout .time {
+  font-size: clamp(11px, 3vw, 13px) !important;
+  min-width: 42px !important;
+  font-weight: 500 !important;
+}
+
+.mobile-layout .progress-container {
+  padding: 12px 0 !important;
+}
+
+.mobile-layout .progress-bg {
+  height: 4px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 2px !important;
+}
+
+.mobile-layout .progress-fill {
+  background: linear-gradient(90deg, #8ABEB9 0%, #B7E5CD 100%) !important;
+  box-shadow: 0 0 8px rgba(138, 190, 185, 0.4) !important;
+}
+
+/* 右侧控制区域 - 移动端隐藏 */
+.mobile-layout .right-controls {
+  display: none !important;
+}
+
+/* 移动端设置按钮样式 */
+.mobile-layout .settings-btn {
+  padding: 10px !important;
+  border-radius: 50% !important;
+  background: none !important;
+  width: auto !important;
+}
+
+.mobile-layout .settings-btn .icon-svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.mobile-layout .settings-label {
+  display: none !important;
+}
+
+/* 移动端设置菜单 */
+.mobile-layout .settings-menu {
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: calc(100% + 8px) !important;
+  transform: none !important;
+  min-width: 280px !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: calc(100vh - 200px) !important;
+  margin-bottom: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  z-index: 2000 !important;
+}
+
+/* 如果菜单会超出屏幕右侧，则向左调整 */
+@media (max-width: 360px) {
+  .mobile-layout .settings-menu {
+    left: auto !important;
+    right: 0 !important;
+  }
+}
+
+.mobile-layout .settings-menu::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+.mobile-layout .settings-menu::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.mobile-layout .settings-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 2px !important;
+}
+
+.mobile-layout .menu-section-title {
+  font-size: clamp(10px, 2.8vw, 11px) !important;
+  padding: 4px 6px !important;
+}
+
+.mobile-layout .quality-option {
+  padding: 12px !important;
+  margin-bottom: 6px !important;
+  border-radius: 10px !important;
+}
+
+.mobile-layout .option-label {
+  font-size: clamp(13px, 3.5vw, 14px) !important;
+  font-weight: 600 !important;
+}
+
+.mobile-layout .option-desc {
+  font-size: clamp(11px, 2.8vw, 12px) !important;
+}
+
+.mobile-layout .volume-control-inline {
+  padding: 12px !important;
+  gap: 10px !important;
+}
+
+.mobile-layout .volume-icon-small {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.mobile-layout .volume-slider-inline {
+  height: 5px !important;
+}
+
+.mobile-layout .volume-slider-inline::-webkit-slider-runnable-track {
+  height: 5px !important;
+}
+
+.mobile-layout .volume-slider-inline::-webkit-slider-thumb {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: -4.5px !important;
+}
+
+.mobile-layout .volume-slider-inline::-moz-range-track {
+  height: 5px !important;
+}
+
+.mobile-layout .volume-slider-inline::-moz-range-thumb {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.mobile-layout .volume-value {
+  font-size: clamp(12px, 3vw, 13px) !important;
+  min-width: 40px !important;
+  font-weight: 600 !important;
+}
+
+/* 小屏幕设备额外适配 */
+@media (max-width: 375px) {
+  .mobile-layout .settings-menu {
+    min-width: 260px !important;
+    max-width: calc(100vw - 24px) !important;
+    padding: 10px !important;
+  }
+
+  .mobile-layout .quality-option {
+    padding: 10px !important;
+  }
+
+  .mobile-layout .volume-control-inline {
+    padding: 10px !important;
+  }
+}
+
+/* 超小屏幕设备适配 */
+@media (max-width: 320px) {
+  .mobile-layout .settings-menu {
+    min-width: 240px !important;
+    max-width: calc(100vw - 20px) !important;
+    padding: 8px !important;
+  }
+
+  .mobile-layout .quality-option {
+    padding: 8px 10px !important;
+  }
+
+  .mobile-layout .option-label {
+    font-size: 12px !important;
+  }
+
+  .mobile-layout .option-desc {
+    font-size: 10px !important;
+  }
+
+  .mobile-layout .volume-control-inline {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  .mobile-layout .volume-value {
+    min-width: 35px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* 横屏模式适配 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-layout .settings-menu {
+    max-height: calc(100vh - 150px) !important;
+  }
+}
+
+/* ==================== 移动端搜索页面 ==================== */
+.mobile-layout .search-page,
+.mobile-layout .favorites-page {
+  padding-bottom: 0 !important;
+}
+
+.mobile-layout .search-header,
+.mobile-layout .favorites-header {
+  flex-direction: row !important;
+  padding: 12px 16px !important;
+  gap: 12px !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1002 !important;
+  background: rgba(26, 42, 50, 0.98) !important;
+}
+
+.mobile-layout .back-btn {
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+.mobile-layout .back-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.mobile-layout .search-info,
+.mobile-layout .favorites-info {
+  flex: 1 !important;
+  text-align: center !important;
+}
+
+.mobile-layout .search-info h2,
+.mobile-layout .favorites-info h2 {
+  font-size: clamp(16px, 4.5vw, 20px) !important;
+  margin-bottom: 2px !important;
+}
+
+.mobile-layout .search-info p,
+.mobile-layout .favorites-info p {
+  font-size: clamp(11px, 3vw, 13px) !important;
+}
+
+.mobile-layout .search-content,
+.mobile-layout .favorites-content {
+  padding: 0 !important;
+}
+
+.mobile-layout .search-results-section,
+.mobile-layout .favorites-results-section {
+  padding: 16px 16px 180px 16px !important;
+}
+
+/* ==================== 移动端歌曲列表 ==================== */
+.mobile-layout .song-list {
+  gap: 8px !important;
+}
+
+.mobile-layout .song-item {
+  padding: 12px !important;
+  border-radius: 12px !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  gap: 12px !important;
+}
+
+.mobile-layout .song-item .album-cover {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 8px !important;
+}
+
+.mobile-layout .song-item .song-info {
+  margin: 0 !important;
+}
+
+.mobile-layout .song-item .song-name {
+  font-size: clamp(13px, 3.5vw, 15px) !important;
+  margin-bottom: 4px !important;
+}
+
+.mobile-layout .song-item .song-artist {
+  font-size: clamp(11px, 3vw, 13px) !important;
+}
+
+.mobile-layout .song-item .song-actions {
+  gap: 4px !important;
+}
+
+.mobile-layout .song-item .action-btn {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 8px !important;
+}
+
+/* 手机版搜索结果歌名居左对齐，字体稍小 */
+.mobile-layout .song-list .song-title {
+  text-align: left !important;
+  font-size: clamp(13px, 3.2vw, 14px) !important;
+}
+
+.mobile-layout .song-list .song-artist {
+  text-align: left !important;
+}
+
+.mobile-layout .song-list .song-details {
+  text-align: left !important;
+}
+
+
+
+/* ==================== 移动端播放页面 ==================== */
+.mobile-layout .play-page {
+  height: calc(100vh - 160px) !important;
+  padding: 0 !important;
+}
+
+.mobile-layout .play-page .particle-canvas {
+  height: calc(100vh - 160px) !important;
+}
+
+.mobile-layout .play-page .wave-background {
+  bottom: 160px !important;
+  height: 120px !important;
+}
+
+.mobile-layout .play-page .back-btn {
+  top: 16px !important;
+  left: 16px !important;
+  width: 44px !important;
+  height: 44px !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.mobile-layout .play-page .back-btn .icon-svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* 隐藏桌面端内容，显示滑动容器 */
+.mobile-layout .desktop-content {
+  display: none !important;
+}
+
+.mobile-layout .mobile-swipe-container {
+  display: flex !important;
+}
+
+/* 以下样式仅在真正的小屏手机上生效，平板不使用 */
+.mobile-layout .play-content {
+  grid-template-columns: 1fr !important;
+  gap: 24px !important;
+  padding: 70px 20px 20px !important;
+  height: calc(100vh - 160px) !important;
+  overflow-y: auto !important;
+}
+
+/* 唱片区域 */
+.mobile-layout .left-section {
+  padding: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+.mobile-layout .disc-wrapper {
+  width: 300px !important;
+  height: 300px !important;
+  margin: 0 auto !important;
+}
+
+.mobile-layout .spectrum-canvas {
+  width: 380px !important;
+  height: 380px !important;
+}
+
+.mobile-layout .needle {
+  width: 90px !important;
+  height: 140px !important;
+  right: 55px !important;
+  top: -35px !important;
+}
+
+.mobile-layout .disc-bg {
+  padding: 18px !important;
+}
+
+.mobile-layout .disc-center {
+  width: 70px !important;
+  height: 70px !important;
+}
+
+/* 歌曲信息区域 */
+.mobile-layout .right-section {
+  padding-top: 0 !important;
+}
+
+.mobile-layout .song-header {
+  margin-bottom: 24px !important;
+  text-align: center !important;
+}
+
+.mobile-layout .title-row {
+  flex-direction: column !important;
+  gap: 16px !important;
+  margin-bottom: 16px !important;
+  align-items: center !important;
+}
+
+.mobile-layout .song-title {
+  font-size: clamp(20px, 5.5vw, 26px) !important;
+  text-align: center !important;
+}
+
+.mobile-layout .download-selector {
+  order: 2 !important;
+}
+
+.mobile-layout .download-btn {
+  width: 44px !important;
+  height: 44px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.mobile-layout .download-btn .icon-svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.mobile-layout .song-info {
+  text-align: center !important;
+  gap: 8px !important;
+}
+
+.mobile-layout .info-item {
+  font-size: clamp(12px, 3.2vw, 14px) !important;
+  display: block !important;
+}
+
+/* 歌词区域 */
+.mobile-layout .lyric-section {
+  min-height: 300px !important;
+}
+
+.mobile-layout .lyric-container {
+  padding: 16px 0 120px 0 !important;
+}
+
+.mobile-layout .lyric-line {
+  font-size: clamp(14px, 3.8vw, 16px) !important;
+  line-height: 2.2 !important;
+  gap: 12px !important;
+  padding: 8px 0 !important;
+}
+
+.mobile-layout .lyric-time {
+  width: 44px !important;
+  font-size: clamp(11px, 3vw, 13px) !important;
+}
+
+.mobile-layout .lyric-line.active .lyric-text {
+  font-size: clamp(16px, 4.2vw, 18px) !important;
+}
+
+.mobile-layout .no-lyric {
+  padding: 80px 20px !important;
+}
+
+.mobile-layout .no-lyric-icon {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+/* ==================== 移动端模态框 ==================== */
+.mobile-layout .modal-overlay {
+  z-index: 2000 !important;
+}
+
+.mobile-layout .modal-content {
+  width: 95vw !important;
+  max-width: 95vw !important;
+  max-height: 85vh !important;
+  margin: 20px auto !important;
+  border-radius: 20px !important;
+}
+
+.mobile-layout .modal-header {
+  padding: 16px 20px !important;
+  border-radius: 20px 20px 0 0 !important;
+}
+
+.mobile-layout .modal-title {
+  font-size: clamp(16px, 4.5vw, 20px) !important;
+}
+
+.mobile-layout .modal-close {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.mobile-layout .modal-body {
+  padding: 20px !important;
+}
+
+/* ==================== 移动端用户菜单 ==================== */
+.mobile-layout .user-menu {
+  position: relative !important;
+}
+
+.mobile-layout .user-avatar {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.mobile-layout .user-dropdown {
+  right: 0 !important;
+  left: auto !important;
+  min-width: 220px !important;
+  border-radius: 16px !important;
+  margin-top: 8px !important;
+}
+
+/* ==================== 移动端Toast提示 ==================== */
+.mobile-layout .toast {
+  bottom: calc(180px + env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-width: calc(100vw - 32px) !important;
+  font-size: clamp(13px, 3.5vw, 15px) !important;
+  padding: 14px 20px !important;
+  border-radius: 12px !important;
+}
+
+/* ==================== 小屏手机优化 (≤480px) ==================== */
+@media (max-width: 480px) {
+  .mobile-layout .app-header {
+    padding: 10px 12px !important;
+  }
+
+  .mobile-layout .favorites-btn,
+  .mobile-layout .playlist-toggle {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    min-height: 44px !important;
+  }
+
+  .mobile-layout .favorites-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .mobile-layout .content-section {
+    padding: 12px 12px 180px 12px !important;
+  }
+
+  .mobile-layout .welcome-banner {
+    padding: 20px 12px !important;
+  }
+
+  .mobile-layout .welcome-icon {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .mobile-layout .welcome-banner h2 {
+    font-size: 24px !important;
+  }
+
+  .mobile-layout .welcome-banner p {
+    font-size: 14px !important;
+  }
+
+  .mobile-layout .recommend-grid {
+    gap: 10px !important;
+  }
+
+
+
+  .mobile-layout .playlist-info {
+    padding: 10px !important;
+  }
+
+  .mobile-layout .playlist-name {
+    font-size: 13px !important;
+  }
+
+  .mobile-layout .player-content {
+    padding: 10px 12px !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-layout .album-cover {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .mobile-layout .song-name {
+    font-size: 14px !important;
+  }
+
+  .mobile-layout .artist-name {
+    font-size: 12px !important;
+  }
+
+  .mobile-layout .control-btn,
+  .mobile-layout .fav-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .mobile-layout .play-btn {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .mobile-layout .play-btn .icon-svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .mobile-layout .disc-wrapper {
+    width: 260px !important;
+    height: 260px !important;
+  }
+
+  .mobile-layout .spectrum-canvas {
+    width: 340px !important;
+    height: 340px !important;
+  }
+
+  .mobile-layout .needle {
+    width: 80px !important;
+    height: 120px !important;
+    right: 45px !important;
+  }
+
+  .mobile-layout .song-title {
+    font-size: 22px !important;
+  }
+
+  .mobile-layout .info-item {
+    font-size: 12px !important;
+  }
+}
+
+/* ==================== 横屏模式优化 ==================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-layout .app-header {
+    padding: 8px 12px !important;
+  }
+
+  .mobile-layout .welcome-banner {
+    padding: 16px 12px !important;
+  }
+
+  .mobile-layout .welcome-icon {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .mobile-layout .play-content {
+    grid-template-columns: 280px 1fr !important;
+    gap: 20px !important;
+    padding: 60px 16px 16px !important;
+  }
+
+  .mobile-layout .disc-wrapper {
+    width: 220px !important;
+    height: 220px !important;
+  }
+
+  .mobile-layout .spectrum-canvas {
+    width: 300px !important;
+    height: 300px !important;
+  }
+
+  .mobile-layout .lyric-container {
+    padding: 10px 0 80px 0 !important;
+  }
+}
+
+/* ==================== 触摸优化 ==================== */
+.mobile-layout button,
+.mobile-layout a,
+.mobile-layout .clickable {
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-layout * {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== 安全区域适配 ==================== */
+.mobile-layout {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ==================== 禁用文本选择 ==================== */
+.mobile-layout {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mobile-layout input,
+.mobile-layout textarea,
+.mobile-layout [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ==================== 动画优化 ==================== */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 滚动条优化 ==================== */
+.mobile-layout ::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+}
+
+.mobile-layout ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.mobile-layout ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 2px !important;
+}

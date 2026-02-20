@@ -25,6 +25,12 @@
             <p class="creator">创建者: {{ playlist.creator?.nickname }}</p>
             <p class="description">{{ playlist.description || '暂无描述' }}</p>
             <p class="track-count">共 {{ playlist.trackCount }} 首歌曲</p>
+            <button @click="playAll" class="play-all-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                <path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/>
+              </svg>
+              播放全部
+            </button>
           </div>
         </div>
 
@@ -41,6 +47,7 @@ import { ref, watch } from 'vue'
 import SongList from './SongList.vue'
 import { getPlaylistDetail, type Song } from '@/api/netease'
 import { toast } from '@/utils/toast'
+import { usePlayerStore } from '@/stores/player'
 
 const props = defineProps<{
   playlistId: number | null
@@ -50,6 +57,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const playerStore = usePlayerStore()
 const loading = ref(false)
 const playlist = ref<any>(null)
 const songs = ref<Song[]>([])
@@ -74,6 +82,21 @@ async function loadPlaylist(id: number) {
   } finally {
     loading.value = false
   }
+}
+
+function playAll() {
+  if (songs.value.length === 0) {
+    toast.error('歌单为空')
+    return
+  }
+
+  // 设置播放模式为顺序播放
+  playerStore.playMode = 'sequence'
+
+  // 设置播放列表并从第一首开始播放
+  playerStore.setPlaylist(songs.value, 0)
+
+  toast.success('已添加全部歌曲到播放列表')
 }
 
 function close() {
@@ -227,10 +250,56 @@ function close() {
   overflow-y: auto;
 }
 
+.description::-webkit-scrollbar {
+  width: 6px;
+}
+
+.description::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.description::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
 .track-count {
   font-size: 13px;
   color: rgba(138, 190, 185, 0.9);
   font-weight: 600;
+}
+
+.play-all-btn {
+  margin-top: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8ABEB9 0%, #B7E5CD 100%);
+  border: none;
+  border-radius: 24px;
+  color: #1a2a32;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(138, 190, 185, 0.3);
+}
+
+.play-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(138, 190, 185, 0.4);
+}
+
+.play-all-btn:active {
+  transform: translateY(0);
+}
+
+.play-all-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
 }
 
 .songs-list {

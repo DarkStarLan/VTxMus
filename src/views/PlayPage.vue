@@ -11,7 +11,8 @@
         class="wave-bar"
         :style="{
           left: `${(i - 1) * 2}%`,
-          transform: `scaleY(${(waveHeights[i - 1] ?? 0) / 100})`
+          transform: `scaleY(${(waveHeights[i - 1] ?? 0) / 100})`,
+          opacity: (waveHeights[i - 1] ?? 0) > 5 ? 1 : 0
         }"
       ></div>
     </div>
@@ -22,9 +23,103 @@
       </svg>
     </button>
 
+    <!-- 移动端滑动容器 -->
+    <div
+      v-if="currentSong && isMobileLayout"
+      ref="mobileSwipeContainer"
+      class="mobile-swipe-container"
+      :style="{ transform: `translateX(${mobileSwipeOffset}px)` }"
+    >
+      <!-- 第一页：唱片页 -->
+      <div class="mobile-page disc-page">
+        <div class="left-section">
+          <div class="disc-wrapper">
+            <!-- 音频频谱可视化 -->
+            <canvas ref="spectrumCanvas" class="spectrum-canvas"></canvas>
 
+            <div class="needle" :class="{ playing: playerStore.isPlaying }"></div>
+            <div class="album-disc" :class="{ rotating: playerStore.isPlaying }">
+              <div class="disc-bg" :style="{ boxShadow: discGlow }">
+                <img
+                  ref="albumImage"
+                  :src="currentSong.album.picUrl"
+                  :alt="currentSong.name"
+                  class="album-image"
+                  crossorigin="anonymous"
+                  @load="extractColors"
+                />
+                <div class="disc-center"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <div v-if="currentSong" class="play-content">
+        <div class="mobile-song-info">
+          <div class="title-row">
+            <h1 class="song-title">{{ currentSong.name }}</h1>
+            <div class="download-selector">
+              <button @click.stop="toggleDownloadMenu" class="download-btn" title="下载">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
+                  <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/>
+                </svg>
+              </button>
+              <div v-if="showDownloadMenu" class="download-menu">
+                <div class="menu-title">选择下载音质</div>
+                <div
+                  v-for="option in qualityOptions"
+                  :key="option.value"
+                  class="quality-option"
+                  @click="downloadWithQuality(option.value)"
+                >
+                  <span class="option-label">{{ option.label }}</span>
+                  <span class="option-desc">{{ option.desc }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="song-info">
+            <span class="info-item">专辑：{{ currentSong.album.name }}</span>
+            <span class="info-item">歌手：{{ currentSong.artists.map(a => a.name).join(' / ') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第二页：歌词页 -->
+      <div class="mobile-page lyric-page">
+        <div class="lyric-section-mobile">
+          <div class="lyric-container" ref="lyricContainerMobile">
+            <div
+              v-for="(line, index) in lyrics"
+              :key="index"
+              class="lyric-line"
+              :class="{ active: index === currentLyricIndex }"
+            >
+              <div class="lyric-content">
+                <div class="lyric-main">
+                  <span class="lyric-text">{{ line.text }}</span>
+                </div>
+                <span v-if="line.translation" class="lyric-translation">{{ line.translation }}</span>
+              </div>
+            </div>
+            <div v-if="lyrics.length === 0" class="no-lyric">
+              <svg class="no-lyric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path fill="currentColor" d="M468 7c7.6 6.1 12 15.3 12 25l0 304c0 44.2-43 80-96 80s-96-35.8-96-80 43-80 96-80c11.2 0 22 1.6 32 4.6l0-116.7-224 49.8 0 206.3c0 44.2-43 80-96 80s-96-35.8-96-80 43-80 96-80c11.2 0 22 1.6 32 4.6L128 96c0-15 10.4-28 25.1-31.2l288-64c9.5-2.1 19.4 .2 27 6.3z"/>
+              </svg>
+              <p>暂无歌词</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页面指示器 - 悬浮固定显示 -->
+    <div v-if="currentSong && isMobileLayout" class="page-indicator">
+      <div class="indicator-dot" :class="{ active: currentMobilePage === 0 }"></div>
+      <div class="indicator-dot" :class="{ active: currentMobilePage === 1 }"></div>
+    </div>
+
+    <!-- 桌面端内容 -->
+    <div v-if="currentSong && !isMobileLayout" class="play-content desktop-content">
       <div class="left-section">
         <div class="disc-wrapper">
           <!-- 音频频谱可视化 -->
@@ -86,7 +181,12 @@
               :class="{ active: index === currentLyricIndex }"
             >
               <span class="lyric-time">{{ formatLyricTime(line.time) }}</span>
-              <span class="lyric-text">{{ line.text }}</span>
+              <div class="lyric-content">
+                <div class="lyric-main">
+                  <span class="lyric-text">{{ line.text }}</span>
+                </div>
+                <span v-if="line.translation" class="lyric-translation">{{ line.translation }}</span>
+              </div>
             </div>
             <div v-if="lyrics.length === 0" class="no-lyric">
               <svg class="no-lyric-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -107,8 +207,10 @@
       <button @click="goBack" class="back-home-btn">返回首页</button>
     </div>
 
-    <div v-if="playerStore.showPlaylist" class="playlist-section">
-      <Playlist />
+    <div v-if="playerStore.showPlaylist" class="playlist-overlay" @click.self="closePlaylist">
+      <div class="playlist-section">
+        <Playlist />
+      </div>
     </div>
 
     <DownloadProgress ref="downloadProgressRef" @retry="handleRetryDownload" />
@@ -128,10 +230,19 @@ import type { DownloadItem } from '@/components/DownloadProgress.vue'
 const router = useRouter()
 const playerStore = usePlayerStore()
 const lyricContainer = ref<HTMLElement>()
-const lyrics = ref<Array<{ time: number; text: string }>>([])
+const lyrics = ref<Array<{ time: number; text: string; translation?: string }>>([])
 const currentLyricIndex = ref(-1)
 const downloadProgressRef = ref<InstanceType<typeof DownloadProgress>>()
 const showDownloadMenu = ref(false)
+
+// 移动端滑动相关
+const mobileSwipeOffset = ref(0)
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const isSwiping = ref(false)
+const currentMobilePage = ref(0) // 0: 唱片页, 1: 歌词页 - 默认显示唱片页
+const lyricContainerMobile = ref<HTMLElement>()
+const mobileSwipeContainer = ref<HTMLElement>()
 
 // 音频可视化相关
 const spectrumCanvas = ref<HTMLCanvasElement>()
@@ -144,7 +255,7 @@ const animationId = ref<number>()
 const particleAnimationId = ref<number>()
 const dynamicBackground = ref('linear-gradient(135deg, #1a2a32 0%, #305669 50%, #2a4555 100%)')
 const discGlow = ref('0 20px 60px rgba(0, 0, 0, 0.6)')
-const waveHeights = ref<number[]>(Array(50).fill(20))
+const waveHeights = ref<number[]>(Array(50).fill(0))
 const particles = ref<Array<{
   x: number
   y: number
@@ -172,74 +283,94 @@ const isFavorite = computed(() => {
   return currentSong.value ? playerStore.isFavorite(currentSong.value.id) : false
 })
 
+// 检测是否为移动端布局
+const isMobileLayout = ref(false)
+
+// 更新布局状态
+function updateLayoutState() {
+  isMobileLayout.value = document.documentElement.classList.contains('mobile-layout')
+}
+
 // 初始化音频可视化
 function initAudioVisualization() {
-  // 如果已经初始化过，直接返回
-  if (audioInitialized.value && audioContext.value && analyser.value) {
-    console.log('音频可视化已经初始化过了')
-    // 如果 AudioContext 被暂停，恢复它
-    if (audioContext.value.state === 'suspended') {
-      audioContext.value.resume()
-    }
-    // 如果动画没有运行，重新启动
-    if (!animationId.value) {
-      drawSpectrum()
-    }
-    return
-  }
-
   // 查找页面中的 audio 元素
   const audioElement = document.querySelector('audio')
   if (!audioElement || !spectrumCanvas.value) {
-    console.log('未找到音频元素或canvas元素')
+    console.log('音频元素或画布未找到，延迟初始化')
     return
   }
 
   try {
-    // 检查音频元素是否已经连接到 AudioContext
-    // 使用全局变量来跟踪，避免重复连接
-    if (!(window as any).__audioContextInitialized) {
-      // 创建 AudioContext
-      if (!audioContext.value) {
-        audioContext.value = new (window.AudioContext || (window as any).webkitAudioContext)()
+    // 检查是否已经全局初始化过
+    if ((window as any).__audioContextInitialized) {
+      // 使用全局的 AudioContext 和 Analyser
+      audioContext.value = (window as any).__globalAudioContext
+      analyser.value = (window as any).__globalAnalyser
+      dataArray.value = (window as any).__globalDataArray
+      audioInitialized.value = true
+
+      // 确保 AudioContext 处于运行状态
+      if (audioContext.value && audioContext.value.state === 'suspended') {
+        audioContext.value.resume().then(() => {
+          console.log('AudioContext 已恢复')
+        })
       }
 
-      const source = audioContext.value.createMediaElementSource(audioElement)
-      analyser.value = audioContext.value.createAnalyser()
-      analyser.value.fftSize = 256
-      analyser.value.smoothingTimeConstant = 0.8
-
-      // 关键：必须连接到 destination，否则没有声音
-      source.connect(analyser.value)
-      analyser.value.connect(audioContext.value.destination)
-
-      const bufferLength = analyser.value.frequencyBinCount
-      dataArray.value = new Uint8Array(bufferLength)
-
-      audioInitialized.value = true
-      ;(window as any).__audioContextInitialized = true
-      // 保存到全局，供其他组件实例使用
-      ;(window as any).__globalAudioContext = audioContext.value
-      ;(window as any).__globalAnalyser = analyser.value
-      ;(window as any).__globalDataArray = dataArray.value
-      console.log('音频可视化初始化成功')
-    } else {
-      console.log('音频元素已连接，跳过初始化')
+      // 启动绘制
+      if (!animationId.value) {
+        drawSpectrum()
+      }
       return
     }
 
-    // 确保 AudioContext 处于运行状态
-    if (audioContext.value.state === 'suspended') {
-      audioContext.value.resume()
-    }
+    // 首次初始化
+    console.log('首次初始化音频可视化')
 
+    // 创建 AudioContext
+    audioContext.value = new (window.AudioContext || (window as any).webkitAudioContext)()
+
+    // 创建音频源
+    const source = audioContext.value.createMediaElementSource(audioElement)
+
+    // 创建分析器
+    analyser.value = audioContext.value.createAnalyser()
+    analyser.value.fftSize = 256
+    analyser.value.smoothingTimeConstant = 0.8
+
+    // 连接音频节点：source -> analyser -> destination
+    source.connect(analyser.value)
+    analyser.value.connect(audioContext.value.destination)
+
+    // 创建数据数组
+    const bufferLength = analyser.value.frequencyBinCount
+    dataArray.value = new Uint8Array(bufferLength)
+
+    // 标记为已初始化
+    audioInitialized.value = true
+    ;(window as any).__audioContextInitialized = true
+    ;(window as any).__globalAudioContext = audioContext.value
+    ;(window as any).__globalAnalyser = analyser.value
+    ;(window as any).__globalDataArray = dataArray.value
+
+    console.log('音频可视化初始化成功')
+
+    // 不立即恢复 AudioContext，等待用户交互（播放音乐时）
+    // 这样可以避免浏览器的自动播放策略警告
     drawSpectrum()
   } catch (error: any) {
     console.error('音频可视化初始化失败:', error)
+    // 如果是 InvalidStateError，说明已经连接过了
     if (error.name === 'InvalidStateError') {
-      console.warn('音频元素已经连接到另一个 AudioContext，跳过初始化')
-      // 不要重置，保持现有状态
-      return
+      console.log('音频元素已连接，尝试使用全局实例')
+      if ((window as any).__globalAudioContext) {
+        audioContext.value = (window as any).__globalAudioContext
+        analyser.value = (window as any).__globalAnalyser
+        dataArray.value = (window as any).__globalDataArray
+        audioInitialized.value = true
+        if (!animationId.value) {
+          drawSpectrum()
+        }
+      }
     }
   }
 }
@@ -247,10 +378,10 @@ function initAudioVisualization() {
 // 绘制频谱
 function drawSpectrum() {
   if (!spectrumCanvas.value || !analyser.value || !dataArray.value) {
-    console.log('drawSpectrum 检查失败:', {
-      hasCanvas: !!spectrumCanvas.value,
-      hasAnalyser: !!analyser.value,
-      hasDataArray: !!dataArray.value
+    console.log('绘制频谱失败：缺少必要元素', {
+      canvas: !!spectrumCanvas.value,
+      analyser: !!analyser.value,
+      dataArray: !!dataArray.value
     })
     return
   }
@@ -264,7 +395,6 @@ function drawSpectrum() {
 
   // 如果动画已经在运行，先停止
   if (animationId.value) {
-    console.log('停止旧的频谱动画')
     cancelAnimationFrame(animationId.value)
     animationId.value = undefined
   }
@@ -273,27 +403,39 @@ function drawSpectrum() {
 
   const draw = () => {
     // 检查是否还有效
-    if (!analyser.value || !dataArray.value) {
-      console.log('analyser 或 dataArray 已失效，停止动画')
+    if (!analyser.value || !dataArray.value || !spectrumCanvas.value) {
+      console.log('频谱绘制中断')
       return
     }
 
+    // 获取频率数据
     analyser.value.getByteFrequencyData(dataArray.value as Uint8Array<ArrayBuffer>)
 
+    // 清空画布
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
-    const radius = 180
+    // 根据 canvas 尺寸动态计算半径，移动端和桌面端使用不同比例
+    // 桌面端 800px canvas → 半径 200px (0.25)
+    // 移动端 450px canvas → 半径 157.5px (0.35)
+    const isMobile = document.documentElement.classList.contains('mobile-layout')
+    const radiusRatio = isMobile ? 0.35 : 0.25
+    const radius = Math.min(canvas.width, canvas.height) * radiusRatio
     const barCount = 64
     const barWidth = 6
 
     // 绘制频谱条 - 使用与背景协调的柔和色调
     for (let i = 0; i < barCount; i++) {
-      const value = dataArray.value[Math.floor(i * dataArray.value.length / barCount)]
+      // 只采样前50%的频谱数据（中低频部分），这部分能量最集中
+      // 使用非线性映射，让低频占更多柱子，高频占较少柱子
+      const freqRatio = Math.pow(i / barCount, 1.5) // 使用1.5次方，让采样更集中在低频
+      const freqIndex = Math.floor(freqRatio * dataArray.value.length * 0.5)
+      const value = dataArray.value[freqIndex]
+
       // 使用对数缩放和限制范围，让频谱更均匀
-      const normalizedValue = Math.pow((value ?? 0) / 255, 0.7) // 使用幂函数平滑
-      const barHeight = normalizedValue * 80 + 15 // 最小15，最大95
+      const normalizedValue = Math.pow((value ?? 0) / 255, 0.6) // 从0.7改为0.6，增强响应
+      const barHeight = normalizedValue * 80 + 8 // 减小最大高度，避免超出 canvas
       const angle = (i / barCount) * Math.PI * 2
 
       const x1 = centerX + Math.cos(angle) * radius
@@ -318,10 +460,21 @@ function drawSpectrum() {
       ctx.stroke()
     }
 
-    // 更新波形高度
+    // 更新波形高度 - 只采样中低频范围，让整体显示更均衡
     waveHeights.value = waveHeights.value.map((_, i) => {
-      const value = dataArray.value![Math.floor(i * dataArray.value!.length / 50)]
-      return Math.max(20, ((value ?? 0) / 255) * 100)
+      // 只采样前50%的频谱数据（中低频部分），使用非线性映射
+      const freqRatio = Math.pow(i / 50, 1.5)
+      const freqIndex = Math.floor(freqRatio * dataArray.value!.length * 0.5)
+      const value = dataArray.value![freqIndex]
+
+      if ((value ?? 0) <= 10) return 0
+
+      // 使用对数缩放让变化更平滑
+      const normalizedValue = (value ?? 0) / 255
+      const logScaled = Math.pow(normalizedValue, 0.6) // 从0.7改为0.6，增强响应
+
+      // 限制最大高度为100，确保不超出容器范围（容器高度150px，scaleY基于100）
+      return Math.min(logScaled * 130, 100) // 增加系数从120到130
     })
 
     animationId.value = requestAnimationFrame(draw)
@@ -577,10 +730,30 @@ function formatLyricTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
-function parseLyric(lyricText: string) {
+function parseLyric(lyricText: string, translationText?: string) {
   const lines = lyricText.split('\n')
-  const result: Array<{ time: number; text: string }> = []
+  const result: Array<{ time: number; text: string; translation?: string }> = []
 
+  // 解析翻译歌词
+  const translationMap = new Map<number, string>()
+  if (translationText) {
+    const translationLines = translationText.split('\n')
+    for (const line of translationLines) {
+      const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/)
+      if (match && match[1] && match[2] && match[3] && match[4]) {
+        const minutes = parseInt(match[1])
+        const seconds = parseInt(match[2])
+        const milliseconds = parseInt(match[3].padEnd(3, '0'))
+        const time = minutes * 60 + seconds + milliseconds / 1000
+        const text = match[4].trim()
+        if (text) {
+          translationMap.set(time, text)
+        }
+      }
+    }
+  }
+
+  // 解析原歌词并匹配翻译
   for (const line of lines) {
     const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/)
     if (match && match[1] && match[2] && match[3] && match[4]) {
@@ -590,7 +763,11 @@ function parseLyric(lyricText: string) {
       const time = minutes * 60 + seconds + milliseconds / 1000
       const text = match[4].trim()
       if (text) {
-        result.push({ time, text })
+        result.push({
+          time,
+          text,
+          translation: translationMap.get(time)
+        })
       }
     }
   }
@@ -604,7 +781,8 @@ async function loadLyric() {
   try {
     const lyricData = await getLyric(currentSong.value.id)
     if (lyricData.lrc && lyricData.lrc.lyric) {
-      lyrics.value = parseLyric(lyricData.lrc.lyric)
+      const translationLyric = lyricData.tlyric?.lyric
+      lyrics.value = parseLyric(lyricData.lrc.lyric, translationLyric)
     } else {
       lyrics.value = []
     }
@@ -623,25 +801,23 @@ watch(() => currentSong.value, (newSong, oldSong) => {
     dynamicBackground.value = 'linear-gradient(135deg, #1a2a32 0%, #305669 50%, #2a4555 100%)'
     discGlow.value = '0 20px 60px rgba(0, 0, 0, 0.6)'
 
-    // 如果是新歌曲（切歌）
-    if (oldSong?.id !== newSong.id) {
-      setTimeout(() => {
-        console.log('歌曲变化，检查音频可视化状态，isPlaying:', playerStore.isPlaying)
-        // 如果已经初始化过
-        if ((window as any).__audioContextInitialized && analyser.value) {
-          console.log('已初始化，检查动画状态，animationId:', animationId.value)
-          // 无论播放状态如何，都重启动画（因为切歌后需要重新绘制）
-          if (!animationId.value) {
-            console.log('重启频谱动画')
-            drawSpectrum()
-          }
-        } else if (playerStore.isPlaying) {
-          // 如果未初始化且正在播放，则初始化
-          console.log('初始化音频可视化')
-          initAudioVisualization()
-        }
-      }, 800)
-    }
+    // 重置移动端页面到唱片页
+    currentMobilePage.value = 0
+    mobileSwipeOffset.value = 0
+
+    // 当歌曲加载后，确保触摸事件已绑定
+    nextTick(() => {
+      // 如果之前没有歌曲，现在有了，需要重新绑定事件
+      if (!oldSong && newSong) {
+        bindTouchEvents()
+      }
+    })
+
+    // 切歌时重新初始化音频可视化
+    setTimeout(() => {
+      console.log('歌曲切换，重新初始化音频可视化')
+      initAudioVisualization()
+    }, 500)
   }
 })
 
@@ -661,42 +837,188 @@ watch(() => playerStore.currentTime, (time) => {
 })
 
 watch(() => playerStore.isPlaying, (isPlaying) => {
-  console.log('播放状态变化:', isPlaying)
   if (isPlaying) {
-    if (!(window as any).__audioContextInitialized) {
-      // 延迟初始化，确保音频元素已加载
-      setTimeout(() => {
-        console.log('尝试初始化音频可视化')
-        initAudioVisualization()
-      }, 300)
-    } else {
-      // 已经初始化过
+    // 延迟初始化，确保音频元素已加载
+    setTimeout(() => {
+      initAudioVisualization()
+
+      // 在用户开始播放时恢复 AudioContext（用户交互后）
       if (audioContext.value && audioContext.value.state === 'suspended') {
-        // 恢复 AudioContext
-        audioContext.value.resume()
+        audioContext.value.resume().then(() => {
+          console.log('AudioContext 已在用户交互后恢复')
+        }).catch(err => {
+          console.log('AudioContext 恢复失败:', err)
+        })
       }
-      // 如果动画未运行，重新启动动画
-      if (!animationId.value && analyser.value && dataArray.value) {
-        console.log('播放状态变化，重启频谱动画')
-        drawSpectrum()
-      }
-    }
+    }, 300)
+  } else {
+    // 暂停时不停止动画，让频谱继续显示（只是数据会变为0）
   }
 })
 
+// 添加防抖标志，避免在页面切换过程中触发歌词滚动
+const isPageTransitioning = ref(false)
+
 function scrollToLyric(index: number) {
   nextTick(() => {
-    if (!lyricContainer.value) return
+    // 如果用户正在滑动或页面正在切换，不执行歌词滚动，避免干扰页面切换
+    if (isSwiping.value || isPageTransitioning.value) {
+      return
+    }
 
-    const lines = lyricContainer.value.querySelectorAll('.lyric-line')
-    if (lines[index]) {
-      lines[index].scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      })
+    // 检查是否为移动端布局
+    const isMobile = document.documentElement.classList.contains('mobile-layout')
+
+    // 桌面端歌词滚动 - 使用手动滚动，只影响歌词容器
+    if (lyricContainer.value && !isMobile) {
+      const container = lyricContainer.value
+      const lines = container.querySelectorAll('.lyric-line')
+      const targetLine = lines[index] as HTMLElement
+
+      if (targetLine) {
+        // 计算目标位置，使歌词在容器中垂直居中
+        const containerHeight = container.clientHeight
+        const lineOffsetTop = targetLine.offsetTop
+        const lineHeight = targetLine.clientHeight
+
+        // 让当前歌词行的中心点对齐到容器的中心点
+        const scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+
+        // 平滑滚动到目标位置
+        container.scrollTo({
+          top: scrollTop, // 允许负值，浏览器会自动处理
+          behavior: 'smooth'
+        })
+      }
+    }
+
+    // 移动端歌词滚动 - 只在当前显示歌词页且不在滑动时才滚动，使用手动滚动
+    if (lyricContainerMobile.value && isMobile && currentMobilePage.value === 1) {
+      const container = lyricContainerMobile.value
+      const lines = container.querySelectorAll('.lyric-line')
+      const targetLine = lines[index] as HTMLElement
+
+      if (targetLine) {
+        // 计算目标位置，使歌词在容器中垂直居中
+        const containerHeight = container.clientHeight
+        const lineOffsetTop = targetLine.offsetTop
+        const lineHeight = targetLine.clientHeight
+
+        // 让当前歌词行的中心点对齐到容器的中心点
+        const scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+
+        // 平滑滚动到目标位置
+        container.scrollTo({
+          top: scrollTop, // 允许负值，浏览器会自动处理
+          behavior: 'smooth'
+        })
+      }
     }
   })
 }
+
+// 移动端滑动处理
+function handleTouchStart(e: TouchEvent) {
+  // 检查是否为移动端布局
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  // 修改横屏判断：只有在真正的横屏（高度明显小于宽度）且高度很小时才禁用
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  // 只在移动端布局且非横屏时启用滑动
+  if (!isMobile || isLandscape) {
+    return
+  }
+
+  touchStartX.value = e.touches[0]?.clientX ?? 0
+  touchStartY.value = e.touches[0]?.clientY ?? 0
+  isSwiping.value = false
+  isPageTransitioning.value = true // 标记页面可能正在切换
+}
+
+function handleTouchMove(e: TouchEvent) {
+  // 检查是否为移动端布局
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  if (!isMobile || isLandscape) return
+
+  const touchX = e.touches[0]?.clientX ?? 0
+  const touchY = e.touches[0]?.clientY ?? 0
+  const deltaX = touchX - touchStartX.value
+  const deltaY = touchY - touchStartY.value
+
+  // 判断是否为横向滑动（降低阈值，减少阻力）
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+    isSwiping.value = true
+
+    // 只在确认是横向滑动后才阻止默认行为
+    if (e.cancelable) {
+      e.preventDefault() // 阻止默认滚动行为
+    }
+
+    // 计算偏移量，限制在两页之间
+    const screenWidth = window.innerWidth
+    const baseOffset = -currentMobilePage.value * screenWidth
+    let newOffset = baseOffset + deltaX
+
+    // 限制边界（减小阻尼系数，降低阻力）
+    if (newOffset > 0) {
+      newOffset = deltaX * 0.5 // 左边界阻尼（从0.3提高到0.5）
+    } else if (newOffset < -screenWidth) {
+      newOffset = -screenWidth + (deltaX - screenWidth) * 0.5 // 右边界阻尼
+    }
+
+    mobileSwipeOffset.value = newOffset
+  }
+}
+
+function handleTouchEnd(e: TouchEvent) {
+  // 检查是否为移动端布局
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  if (!isMobile || isLandscape || !isSwiping.value) {
+    // 即使没有滑动，也要延迟重置切换标志
+    setTimeout(() => {
+      isPageTransitioning.value = false
+    }, 300)
+    return
+  }
+
+  const screenWidth = window.innerWidth
+  const threshold = screenWidth * 0.25 // 降低滑动阈值（从0.3降到0.25），更容易切换
+
+  // 判断是否切换页面
+  if (Math.abs(mobileSwipeOffset.value + currentMobilePage.value * screenWidth) > threshold) {
+    if (mobileSwipeOffset.value > -currentMobilePage.value * screenWidth) {
+      // 向右滑，切换到上一页
+      currentMobilePage.value = Math.max(0, currentMobilePage.value - 1)
+    } else {
+      // 向左滑，切换到下一页
+      currentMobilePage.value = Math.min(1, currentMobilePage.value + 1)
+    }
+  }
+
+  // 动画回到目标页面
+  mobileSwipeOffset.value = -currentMobilePage.value * screenWidth
+  isSwiping.value = false
+
+  // 延迟重置切换标志，确保动画完成后才允许歌词滚动
+  setTimeout(() => {
+    isPageTransitioning.value = false
+  }, 300)
+}
+
+// 移除自动点击切换功能，避免误触
+// function handleMobileClick(e: MouseEvent) {
+//   const isLandscape = window.innerHeight < window.innerWidth && window.innerHeight < 600
+//   if (window.innerWidth > 1000 || isLandscape || isSwiping.value) return
+//
+//   // 点击切换页面
+//   const screenWidth = window.innerWidth
+//   currentMobilePage.value = currentMobilePage.value === 0 ? 1 : 0
+//   mobileSwipeOffset.value = -currentMobilePage.value * screenWidth
+// }
 
 // 点击外部关闭下载菜单
 function handleClickOutside(event: MouseEvent) {
@@ -714,60 +1036,249 @@ watch(showDownloadMenu, (show) => {
   }
 })
 
+// 监听设备布局变化，重置移动端页面状态
+watch(() => document.documentElement.className, () => {
+  updateLayoutState()
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  if (isMobile) {
+    // 重置到第一页
+    currentMobilePage.value = 0
+    mobileSwipeOffset.value = 0
+    // 重新绑定事件（因为 v-if 会导致元素重新创建）
+    nextTick(() => {
+      bindTouchEvents()
+    })
+  }
+})
+
+// 监听 isMobileLayout 变化，重新绑定事件
+watch(isMobileLayout, (isMobile) => {
+  if (isMobile) {
+    // 切换到移动端布局时，等待 DOM 更新后绑定事件
+    nextTick(() => {
+      bindTouchEvents()
+    })
+  } else {
+    // 切换到桌面布局时，解绑事件
+    unbindTouchEvents()
+  }
+})
+
+// 点击切换页面
+function handleClick(e: MouseEvent) {
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  // 只在移动端布局且非横屏时启用点击切换
+  if (!isMobile || isLandscape) {
+    return
+  }
+
+  // 如果正在滑动，不处理点击
+  if (isSwiping.value) {
+    return
+  }
+
+  // 标记页面正在切换
+  isPageTransitioning.value = true
+
+  // 获取点击位置
+  const clickX = e.clientX
+  const screenWidth = window.innerWidth
+
+  // 点击左侧1/3区域，切换到上一页
+  if (clickX < screenWidth / 3) {
+    if (currentMobilePage.value > 0) {
+      currentMobilePage.value = 0
+      mobileSwipeOffset.value = 0
+    }
+  }
+  // 点击右侧1/3区域，切换到下一页
+  else if (clickX > screenWidth * 2 / 3) {
+    if (currentMobilePage.value < 1) {
+      currentMobilePage.value = 1
+      mobileSwipeOffset.value = -screenWidth
+    }
+  }
+
+  // 延迟重置切换标志
+  setTimeout(() => {
+    isPageTransitioning.value = false
+  }, 300)
+}
+
+// 鼠标事件处理（用于桌面浏览器测试）
+let isMouseDown = false
+let mouseDownTime = 0
+let mouseDownX = 0
+
+function handleMouseDown(e: MouseEvent) {
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  if (!isMobile || isLandscape) return
+
+  isMouseDown = true
+  mouseDownTime = Date.now()
+  mouseDownX = e.clientX
+  touchStartX.value = e.clientX
+  touchStartY.value = e.clientY
+  isSwiping.value = false
+  isPageTransitioning.value = true // 标记页面可能正在切换
+}
+
+function handleMouseMove(e: MouseEvent) {
+  if (!isMouseDown) return
+
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  if (!isMobile || isLandscape) return
+
+  const mouseX = e.clientX
+  const mouseY = e.clientY
+  const deltaX = mouseX - touchStartX.value
+  const deltaY = mouseY - touchStartY.value
+
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+    isSwiping.value = true
+    e.preventDefault()
+
+    const screenWidth = window.innerWidth
+    const baseOffset = -currentMobilePage.value * screenWidth
+    let newOffset = baseOffset + deltaX
+
+    if (newOffset > 0) {
+      newOffset = deltaX * 0.5
+    } else if (newOffset < -screenWidth) {
+      newOffset = -screenWidth + (deltaX - screenWidth) * 0.5
+    }
+
+    mobileSwipeOffset.value = newOffset
+  }
+}
+
+function handleMouseUp(e: MouseEvent) {
+  if (!isMouseDown) return
+
+  const isMobile = document.documentElement.classList.contains('mobile-layout')
+  const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 500
+
+  const wasSwiping = isSwiping.value
+
+  isMouseDown = false
+
+  if (!isMobile || isLandscape) {
+    return
+  }
+
+  // 如果有滑动，处理滑动逻辑
+  if (wasSwiping) {
+    const screenWidth = window.innerWidth
+    const threshold = screenWidth * 0.25
+
+    if (Math.abs(mobileSwipeOffset.value + currentMobilePage.value * screenWidth) > threshold) {
+      if (mobileSwipeOffset.value > -currentMobilePage.value * screenWidth) {
+        currentMobilePage.value = Math.max(0, currentMobilePage.value - 1)
+      } else {
+        currentMobilePage.value = Math.min(1, currentMobilePage.value + 1)
+      }
+    }
+
+    mobileSwipeOffset.value = -currentMobilePage.value * screenWidth
+  }
+
+  // 延迟重置 isSwiping，让 click 事件能正确判断
+  setTimeout(() => {
+    isSwiping.value = false
+  }, 50)
+
+  // 延迟重置切换标志，确保动画完成后才允许歌词滚动
+  setTimeout(() => {
+    isPageTransitioning.value = false
+  }, 300)
+}
+
+// 关闭播放列表
+function closePlaylist() {
+  playerStore.showPlaylist = false
+}
+
+// 绑定触摸和鼠标事件监听器
+function bindTouchEvents() {
+  if (mobileSwipeContainer.value) {
+    // 触摸事件
+    mobileSwipeContainer.value.addEventListener('touchstart', handleTouchStart as any, { passive: true })
+    mobileSwipeContainer.value.addEventListener('touchmove', handleTouchMove as any, { passive: false })
+    mobileSwipeContainer.value.addEventListener('touchend', handleTouchEnd as any, { passive: true })
+    // 鼠标事件（用于桌面浏览器测试）
+    mobileSwipeContainer.value.addEventListener('mousedown', handleMouseDown as any)
+    mobileSwipeContainer.value.addEventListener('mousemove', handleMouseMove as any)
+    mobileSwipeContainer.value.addEventListener('mouseup', handleMouseUp as any)
+    mobileSwipeContainer.value.addEventListener('mouseleave', handleMouseUp as any) // 鼠标离开时也触发
+    // 点击事件
+    mobileSwipeContainer.value.addEventListener('click', handleClick as any)
+  }
+}
+
+// 解绑触摸和鼠标事件监听器
+function unbindTouchEvents() {
+  if (mobileSwipeContainer.value) {
+    // 触摸事件
+    mobileSwipeContainer.value.removeEventListener('touchstart', handleTouchStart as any)
+    mobileSwipeContainer.value.removeEventListener('touchmove', handleTouchMove as any)
+    mobileSwipeContainer.value.removeEventListener('touchend', handleTouchEnd as any)
+    // 鼠标事件
+    mobileSwipeContainer.value.removeEventListener('mousedown', handleMouseDown as any)
+    mobileSwipeContainer.value.removeEventListener('mousemove', handleMouseMove as any)
+    mobileSwipeContainer.value.removeEventListener('mouseup', handleMouseUp as any)
+    mobileSwipeContainer.value.removeEventListener('mouseleave', handleMouseUp as any)
+    // 点击事件
+    mobileSwipeContainer.value.removeEventListener('click', handleClick as any)
+  }
+}
+
 onMounted(() => {
   if (currentSong.value) {
     loadLyric()
   }
 
+  // 确保移动端从第一页开始
+  currentMobilePage.value = 0
+  mobileSwipeOffset.value = 0
+
+  // 初始化布局状态
+  updateLayoutState()
+
   // 初始化可视化效果
   nextTick(() => {
     if (spectrumCanvas.value) {
-      spectrumCanvas.value.width = 600
-      spectrumCanvas.value.height = 600
+      // 增大 canvas 尺寸以容纳更长的波纹
+      spectrumCanvas.value.width = 800
+      spectrumCanvas.value.height = 800
     }
     initParticles()
 
-    // 检查音频可视化状态
-    if (playerStore.isPlaying) {
-      if ((window as any).__audioContextInitialized) {
-        // 全局已初始化，但当前组件实例可能没有 analyser
-        // 需要从全局 AudioContext 获取或重新初始化
-        console.log('组件挂载，全局已初始化，检查当前实例状态')
-        if (!analyser.value || !dataArray.value) {
-          console.log('当前实例缺少 analyser，需要重新获取')
-          // 尝试从全局获取
-          if ((window as any).__globalAnalyser && (window as any).__globalDataArray) {
-            analyser.value = (window as any).__globalAnalyser
-            dataArray.value = (window as any).__globalDataArray
-            audioContext.value = (window as any).__globalAudioContext
-            audioInitialized.value = true
-            console.log('从全局恢复 analyser')
-            // 启动动画
-            setTimeout(() => {
-              drawSpectrum()
-            }, 500)
-          }
-        } else {
-          // 已有 analyser，直接启动动画
-          setTimeout(() => {
-            drawSpectrum()
-          }, 500)
-        }
-      } else {
-        // 未初始化，进行初始化
-        setTimeout(() => {
-          initAudioVisualization()
-        }, 1000)
-      }
-    }
+    // 尝试绑定触摸事件（如果容器已存在）
+    bindTouchEvents()
+
+    // 延迟初始化音频可视化，确保音频元素已加载
+    setTimeout(() => {
+      console.log('尝试初始化音频可视化，播放状态:', playerStore.isPlaying)
+      initAudioVisualization()
+    }, 500)
   })
 
   // 监听窗口大小变化
   window.addEventListener('resize', () => {
+    updateLayoutState()
     if (particleCanvas.value) {
       particleCanvas.value.width = window.innerWidth
       particleCanvas.value.height = window.innerHeight
     }
+    // 重置移动端滑动位置
+    const screenWidth = window.innerWidth
+    mobileSwipeOffset.value = -currentMobilePage.value * screenWidth
   })
 })
 
@@ -778,6 +1289,8 @@ onUnmounted(() => {
   if (particleAnimationId.value) {
     cancelAnimationFrame(particleAnimationId.value)
   }
+  // 移除触摸事件监听器
+  unbindTouchEvents()
   // 不要关闭 AudioContext，因为音频元素还在使用
   // 只是停止动画
   document.removeEventListener('click', handleClickOutside)
@@ -808,10 +1321,10 @@ onUnmounted(() => {
   bottom: 88px;
   left: 0;
   width: 100%;
-  height: 200px;
+  height: 250px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.15;
+  opacity: 0.2;
   overflow: hidden;
 }
 
@@ -819,7 +1332,7 @@ onUnmounted(() => {
   position: absolute;
   bottom: 0;
   width: 1.5%;
-  height: 100px;
+  height: 150px;
   background: linear-gradient(to top, rgba(138, 190, 185, 0.8), rgba(183, 229, 205, 0.3));
   border-radius: 4px 4px 0 0;
   transform-origin: bottom;
@@ -989,12 +1502,12 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  padding-top: 20px;
+  padding-top: 0;
 }
 
 .song-header {
   flex-shrink: 0;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .title-row {
@@ -1059,6 +1572,8 @@ onUnmounted(() => {
   min-width: 160px;
   z-index: 1000;
   animation: slideDown 0.2s ease;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 @keyframes slideDown {
@@ -1129,7 +1644,7 @@ onUnmounted(() => {
 .lyric-container {
   height: 100%;
   overflow-y: auto;
-  padding: 20px 20px 200px 0;
+  padding: 20px 20px 150px 0;
   min-height: 0;
 }
 
@@ -1140,7 +1655,6 @@ onUnmounted(() => {
 .lyric-container::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
-  margin-bottom: 100px;
 }
 
 .lyric-container::-webkit-scrollbar-thumb {
@@ -1152,11 +1666,10 @@ onUnmounted(() => {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  font-size: 16px;
-  line-height: 2.2;
+  font-size: 18px;
   color: rgba(255, 255, 255, 0.35);
   transition: all 0.3s ease;
-  padding: 6px 0;
+  padding: 8px 0;
   cursor: default;
 }
 
@@ -1169,8 +1682,28 @@ onUnmounted(() => {
   text-align: right;
 }
 
-.lyric-text {
+.lyric-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lyric-main {
+  display: flex;
+}
+
+.lyric-text {
+  display: block;
+  font-size: 18px;
+  line-height: 2.5;
+}
+
+.lyric-translation {
+  display: block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1.5;
 }
 
 .lyric-line.active {
@@ -1183,8 +1716,13 @@ onUnmounted(() => {
 }
 
 .lyric-line.active .lyric-text {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.lyric-line.active .lyric-translation {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 15px;
 }
 
 .no-lyric {
@@ -1251,6 +1789,34 @@ onUnmounted(() => {
   }
 }
 
+/* 移动端滑动容器 */
+.mobile-swipe-container {
+  display: flex !important;
+  width: 200vw !important;
+  height: calc(100vh - 140px) !important;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  will-change: transform !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* 桌面端内容 */
+.desktop-content {
+  display: grid !important;
+}
+
+.playlist-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
 .playlist-section {
   position: fixed;
   right: 40px;
@@ -1259,13 +1825,22 @@ onUnmounted(() => {
   width: 380px;
   animation: slideInRight 0.4s ease;
   overflow: hidden;
-  z-index: 100;
+  z-index: 101;
   background: rgba(26, 42, 50, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   padding: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInRight {
@@ -1279,32 +1854,353 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 1200px) {
-  .play-content {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 30px 40px;
+/* 移动端适配 - 使用 .mobile-layout 类（覆盖 0-1000px）*/
+.mobile-layout .play-page {
+  height: calc(100vh - 140px) !important;
+  overflow: hidden !important;
+}
+
+.mobile-layout .particle-canvas {
+  height: calc(100vh - 140px) !important;
+}
+
+.mobile-layout .wave-background {
+  bottom: 140px !important;
+  height: 200px !important;
+}
+
+.mobile-layout .back-btn {
+  top: 16px !important;
+  left: 16px !important;
+  width: 40px !important;
+  height: 40px !important;
+  z-index: 1001 !important;
+}
+
+.mobile-layout .back-btn .icon-svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.mobile-layout .mobile-page {
+  width: 100vw;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 唱片页 */
+.mobile-layout .disc-page {
+  padding: 60px 20px 20px;
+  justify-content: center;
+  align-items: center;
+}
+
+.mobile-layout .disc-page .left-section {
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.mobile-layout .disc-page .disc-wrapper {
+  width: 280px;
+  height: 280px;
+}
+
+.mobile-layout .disc-page .spectrum-canvas {
+  width: 450px !important;
+  height: 450px !important;
+}
+
+.mobile-layout .disc-page .needle {
+  width: 80px;
+  height: 120px;
+  right: 50px;
+  top: -30px;
+}
+
+.mobile-layout .disc-page .disc-bg {
+  padding: 16px;
+}
+
+.mobile-layout .disc-page .disc-center {
+  width: 60px;
+  height: 60px;
+}
+
+.mobile-layout .mobile-song-info {
+  margin-top: 40px;
+  text-align: center;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.mobile-layout .mobile-song-info .title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobile-layout .mobile-song-info .song-title {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-layout .mobile-song-info .download-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+.mobile-layout .mobile-song-info .song-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mobile-layout .mobile-song-info .info-item {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 歌词页 */
+.mobile-layout .lyric-page {
+  padding: 80px 20px 20px;
+}
+
+.mobile-layout .lyric-section-mobile {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-container {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 0 150px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-container::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line {
+  display: flex;
+  justify-content: center;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  padding: 8px 20px;
+  cursor: default;
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-main {
+  display: flex;
+  justify-content: center;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line .lyric-text {
+  display: block;
+  font-size: 16px;
+  line-height: 2.5;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line .lyric-translation {
+  display: block;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1.5;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line.active {
+  color: #fff;
+  text-shadow: 0 0 20px rgba(138, 190, 185, 0.5);
+  transform: scale(1.05);
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line.active .lyric-text {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.mobile-layout .lyric-section-mobile .lyric-line.active .lyric-translation {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
+}
+
+.mobile-layout .lyric-section-mobile .no-lyric {
+  text-align: center;
+  padding: 100px 20px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.mobile-layout .lyric-section-mobile .no-lyric-icon {
+  width: 80px;
+  height: 80px;
+  fill: rgba(138, 190, 185, 0.5);
+  display: block;
+  margin: 0 auto 16px;
+  filter: drop-shadow(0 4px 12px rgba(138, 190, 185, 0.2));
+}
+
+/* 页面指示器 */
+.mobile-layout .page-indicator {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.mobile-layout .indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-layout .indicator-dot.active {
+  background: rgba(138, 190, 185, 0.95);
+  width: 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(138, 190, 185, 0.5);
+}
+
+.mobile-layout .playlist-overlay {
+  z-index: 100;
+}
+
+.mobile-layout .playlist-section {
+  position: fixed;
+  right: 0;
+  left: 0;
+  top: auto;
+  bottom: 140px;
+  width: 100%;
+  max-height: 50vh;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  z-index: 101;
+}
+
+/* 移动端下载菜单优化 - 相对于第一个页面（唱片页）居中 */
+.mobile-layout .disc-page .download-menu {
+  position: fixed !important;
+  top: auto !important;
+  left: 50vw !important;
+  bottom: 160px !important;
+  transform: translateX(-50%) !important;
+  margin-top: 0 !important;
+  min-width: 200px;
+  max-width: calc(100vw - 40px);
+  max-height: 60vh;
+}
+
+.mobile-layout .download-menu .menu-title {
+  font-size: 14px;
+  padding: 12px 16px 10px;
+}
+
+.mobile-layout .download-menu .quality-option {
+  padding: 12px 16px;
+}
+
+.mobile-layout .download-menu .option-label {
+  font-size: 15px;
+}
+
+.mobile-layout .download-menu .option-desc {
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .mobile-layout .disc-page .disc-wrapper {
+    width: 240px;
+    height: 240px;
   }
 
-  .disc-wrapper {
-    width: 320px;
-    height: 320px;
+  .mobile-layout .disc-page .spectrum-canvas {
+    width: 300px !important;
+    height: 300px !important;
   }
 
-  .spectrum-canvas {
-    width: 400px !important;
-    height: 400px !important;
+  .mobile-layout .disc-page .needle {
+    width: 70px;
+    height: 100px;
+    right: 40px;
   }
 
-  .needle {
-    width: 100px;
-    height: 150px;
-    right: 60px;
+  .mobile-layout .mobile-song-info .song-title {
+    font-size: 20px;
   }
 
-  .song-title {
-    font-size: 28px;
+  .mobile-layout .mobile-song-info .download-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobile-layout .mobile-song-info .info-item {
+    font-size: 12px;
+  }
+
+  .mobile-layout .lyric-section-mobile .lyric-line {
+    font-size: 15px;
+  }
+
+  .mobile-layout .lyric-section-mobile .lyric-line.active {
+    font-size: 18px;
+  }
+}
+
+/* 横屏适配 */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .mobile-layout .mobile-swipe-container {
+    display: none !important;
+  }
+
+  .mobile-layout .desktop-content {
+    display: grid !important;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .mobile-layout .disc-wrapper {
+    width: 220px;
+    height: 220px;
+  }
+
+  .mobile-layout .spectrum-canvas {
+    width: 280px !important;
+    height: 280px !important;
+  }
+
+  .mobile-layout .lyric-container {
+    padding: 10px 0 100px 0;
   }
 }
 </style>
-

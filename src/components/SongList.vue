@@ -39,6 +39,17 @@
           </button>
         </div>
       </div>
+
+      <!-- 加载更多或没有更多提示 -->
+      <div v-if="showLoadingMore" class="loading-more">
+        <svg class="spinner-icon-small" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+          <path fill="currentColor" d="M222.7 32.1c5 16.9-4.6 34.8-21.5 39.8-79.3 23.6-137.1 97.1-137.1 184.1 0 106 86 192 192 192s192-86 192-192c0-86.9-57.8-160.4-137.1-184.1-16.9-5-26.6-22.9-21.5-39.8s22.9-26.6 39.8-21.5C434.9 42.1 512 140 512 256 512 397.4 397.4 512 256 512S0 397.4 0 256c0-116 77.1-213.9 182.9-245.4 16.9-5 34.8 4.6 39.8 21.5z"/>
+        </svg>
+        <span>加载中...</span>
+      </div>
+      <div v-else-if="showNoMore" class="no-more">
+        <span>没有更多结果了</span>
+      </div>
     </div>
   </div>
 </template>
@@ -51,6 +62,8 @@ import { toast } from '@/utils/toast'
 
 const props = defineProps<{
   songs: Song[]
+  showLoadingMore?: boolean
+  showNoMore?: boolean
 }>()
 
 const router = useRouter()
@@ -140,7 +153,12 @@ function formatDuration(ms: number): string {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-bottom: 20px;
+  padding-bottom: 120px;
+}
+
+/* 移动端布局底部留白 */
+html.mobile-layout .song-items {
+  padding-bottom: 180px !important;
 }
 
 .song-item {
@@ -190,6 +208,7 @@ function formatDuration(ms: number): string {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 .song-artist {
@@ -198,6 +217,7 @@ function formatDuration(ms: number): string {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 .song-album {
@@ -267,5 +287,142 @@ function formatDuration(ms: number): string {
 .add-btn:hover svg {
   fill: rgba(183, 229, 205, 1);
 }
+
+.add-btn:hover svg {
+  fill: rgba(183, 229, 205, 1);
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.spinner-icon-small {
+  width: 24px;
+  height: 24px;
+  fill: #8ABEB9;
+  animation: spin 1s linear infinite;
+}
+
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+.no-more span {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .song-item {
+    grid-template-columns: 32px 48px 1fr 80px 60px;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .song-album {
+    display: none;
+  }
+
+  .song-actions {
+    display: flex;
+  }
+
+  .song-index {
+    font-size: 13px;
+  }
+
+  .song-cover {
+    width: 44px;
+    height: 44px;
+  }
+
+  .song-title {
+    font-size: 14px;
+  }
+
+  .song-artist {
+    font-size: 12px;
+  }
+
+  .song-duration {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .song-item {
+    grid-template-columns: 28px 40px 1fr 80px 55px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .song-index {
+    font-size: 12px;
+  }
+
+  .song-cover {
+    width: 40px;
+    height: 40px;
+  }
+
+  .song-title {
+    font-size: 13px;
+  }
+
+  .song-artist {
+    font-size: 11px;
+  }
+
+  .song-duration {
+    font-size: 11px;
+  }
+}
+
+/* 触摸设备优化 - 仅在移动端应用 */
+@media (hover: none) and (pointer: coarse) and (max-width: 768px) {
+  .song-item {
+    grid-template-columns: 32px 48px 1fr 80px 80px;
+  }
+
+  .song-actions {
+    display: flex;
+    opacity: 1;
+  }
+
+  .action-btn {
+    opacity: 0.7;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .action-btn:active {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
 </style>
+
+
+
 

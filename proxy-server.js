@@ -15,7 +15,14 @@ const PORT = 3001
 
 // 配置 CORS，支持 credentials
 app.use(cors({
-  origin: 'http://localhost:5173', // 指定允许的源
+  origin: (origin, callback) => {
+    // 允许所有 localhost 端口
+    if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true // 允许携带凭证
 }))
 app.use(express.json())
@@ -149,7 +156,16 @@ app.post('/proxy/eapi/*', async (req, res) => {
 app.all('/proxy/api/*', async (req, res) => {
   try {
     const targetPath = req.params[0]
-    const targetUrl = `https://music.163.com/api/${targetPath}`
+    const cookie = getCookie()
+
+    // 构建完整的 URL（包含查询参数）
+    let targetUrl = `https://music.163.com/api/${targetPath}`
+    if (req.method === 'GET' && Object.keys(req.query).length > 0) {
+      const queryString = new URLSearchParams(req.query).toString()
+      targetUrl += `?${queryString}`
+    }
+
+    console.log(`代理 API 请求: ${req.method} ${targetUrl}`)
 
     const response = await fetch(targetUrl, {
       method: req.method,
@@ -157,11 +173,13 @@ app.all('/proxy/api/*', async (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://music.163.com/',
+        'Cookie': `os=pc; appver=8.9.70; ${cookie}`
       },
       body: req.method === 'POST' ? new URLSearchParams(req.body).toString() : undefined
     })
 
     const data = await response.json()
+    console.log(`API 响应 (${targetPath}):`, data.code || data)
     res.json(data)
   } catch (error) {
     console.error('代理错误:', error)

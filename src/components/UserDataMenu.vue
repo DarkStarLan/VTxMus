@@ -33,7 +33,7 @@
 
     <div v-if="showMenu" class="menu-overlay" @click="closeMenu"></div>
     <input ref="fileInput" type="file" accept=".json" @change="onFileSelected" style="display: none" />
-    
+
     <!-- 登录二维码弹窗 -->
     <LoginQRModal v-model:visible="showLoginModal" @success="onLoginSuccess" />
   </div>
@@ -67,7 +67,7 @@ function handleLogin() {
 function onLoginSuccess(cookie: string) {
   console.log('登录成功，获取到的 Cookie:', cookie)
   toast.success('登录成功！Cookie 已保存到 localStorage 和服务器')
-  
+
   // 提示用户重启应用
   setTimeout(() => {
     toast.success('请重启应用以使用新的登录状态', 3000)
@@ -170,7 +170,7 @@ function onFileSelected(event: Event) {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 999;
+  z-index: 1002;
 }
 
 .menu-dropdown {
@@ -184,7 +184,7 @@ function onFileSelected(event: Event) {
   padding: 8px;
   min-width: 200px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
+  z-index: 1003;
 }
 
 .menu-item {

@@ -1,5 +1,57 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import MusicPlayer from './components/MusicPlayer.vue'
+import { getDeviceInfo, watchDeviceChange } from './utils/device'
+
+// 应用设备样式
+function applyDeviceStyles() {
+  const deviceInfo = getDeviceInfo()
+  const htmlElement = document.documentElement
+
+  console.log('设备信息:', {
+    宽度: deviceInfo.screenWidth,
+    高度: deviceInfo.screenHeight,
+    是否移动端: deviceInfo.isMobile,
+    是否桌面: deviceInfo.isDesktop,
+    设备类型: deviceInfo.deviceType
+  })
+
+  // 移除所有设备类
+  htmlElement.classList.remove('mobile-layout', 'desktop-layout')
+
+  // 添加对应的设备类
+  if (deviceInfo.isMobile) {
+    htmlElement.classList.add('mobile-layout')
+    console.log('✓ 应用移动端布局 (.mobile-layout) - 宽度 ≤ 1000px')
+  } else {
+    htmlElement.classList.add('desktop-layout')
+    console.log('✓ 应用桌面布局 (.desktop-layout) - 宽度 > 1000px')
+  }
+
+  // 添加触摸设备类
+  if (deviceInfo.isTouchDevice) {
+    htmlElement.classList.add('touch-device')
+  }
+}
+
+let unwatchDevice: (() => void) | null = null
+
+onMounted(() => {
+  // 初始应用设备样式
+  applyDeviceStyles()
+
+  // 监听设备变化
+  unwatchDevice = watchDeviceChange(() => {
+    applyDeviceStyles()
+  })
+})
+
+onUnmounted(() => {
+  // 清理监听器
+  if (unwatchDevice) {
+    unwatchDevice()
+  }
+})
 </script>
 
 <template>
@@ -21,6 +73,7 @@ import MusicPlayer from './components/MusicPlayer.vue'
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -28,17 +81,35 @@ body {
   background: #1a2a32;
   color: #fff;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  /* 防止移动端双击缩放 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 允许文本选择 */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 #app {
   height: 100vh;
+  height: 100dvh; /* 动态视口高度，适配移动端 */
   overflow: hidden;
+  /* 支持安全区域 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 </style>
 
 <style scoped>
 .app {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

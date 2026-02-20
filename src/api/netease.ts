@@ -5,6 +5,21 @@ import { eapiRequest } from '@/utils/crypto'
 const BASE_URL = API_BASE_URL
 const COOKIE = NETEASE_COOKIE
 
+// 获取 API 基础 URL
+// 开发环境和 Electron 环境使用 localhost，Web 部署使用相对路径
+function getApiBaseUrl(): string {
+  // 如果是开发环境，使用 localhost
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3001'
+  }
+  // 如果是 Electron 环境（通过 file:// 协议判断），使用 localhost
+  if (window.location.protocol === 'file:') {
+    return 'http://localhost:3001'
+  }
+  // Web 部署环境使用 /VTxMus 作为基础路径（因为部署在子目录）
+  return '/VTxMus'
+}
+
 // 解析 Cookie 字符串为对象
 function parseCookieString(cookieStr: string): Record<string, string> {
   const cookies: Record<string, string> = {}
@@ -40,9 +55,8 @@ export interface Lyric {
 // 搜索歌曲
 export async function searchSongs(keywords: string, limit = 20, offset = 0): Promise<SearchResult> {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const url = `${baseUrl}/api/cloudsearch/pc`
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}/proxy/api/cloudsearch/pc`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -96,9 +110,8 @@ export async function searchSongs(keywords: string, limit = 20, offset = 0): Pro
 // 获取歌曲详情
 export async function getSongDetail(ids: number[]): Promise<Song[]> {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const url = `${baseUrl}/api/v3/song/detail`
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}/proxy/api/v3/song/detail`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -145,7 +158,9 @@ export async function getSongDetail(ids: number[]): Promise<Song[]> {
 // 获取歌曲播放 URL
 export async function getSongUrl(id: number, quality: string = DEFAULT_QUALITY): Promise<string> {
   try {
-    // 使用本地代理服务
+    const baseUrl = getApiBaseUrl()
+
+    // 使用 EAPI（需要 Node.js 代理服务）
     const config = {
       os: 'pc',
       appver: '',
@@ -166,7 +181,7 @@ export async function getSongUrl(id: number, quality: string = DEFAULT_QUALITY):
       payload.immerseType = 'c51'
     }
 
-    const response = await fetch('http://localhost:3001/proxy/eapi/song/enhance/player/url/v1', {
+    const response = await fetch(`${baseUrl}/proxy/eapi/song/enhance/player/url/v1`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -176,19 +191,18 @@ export async function getSongUrl(id: number, quality: string = DEFAULT_QUALITY):
 
     const result = await response.json()
     console.log('EAPI 高音质响应:', result)
-    console.log('EAPI 高音质 data[0]:', result.data?.[0])
 
     if (result.code === 200 && result.data && result.data[0] && result.data[0].url) {
       // 通过代理服务器转发音频流
       const originalUrl = result.data[0].url
-      return `http://localhost:3001/proxy/audio?url=${encodeURIComponent(originalUrl)}`
+      return `${baseUrl}/proxy/audio?url=${encodeURIComponent(originalUrl)}`
     }
 
     // 如果高音质失败，尝试标准音质
     console.warn('高音质获取失败，尝试标准音质...')
     payload.level = 'standard'
 
-    const standardResponse = await fetch('http://localhost:3001/proxy/eapi/song/enhance/player/url/v1', {
+    const standardResponse = await fetch(`${baseUrl}/proxy/eapi/song/enhance/player/url/v1`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -198,12 +212,11 @@ export async function getSongUrl(id: number, quality: string = DEFAULT_QUALITY):
 
     const standardResult = await standardResponse.json()
     console.log('EAPI 标准音质响应:', standardResult)
-    console.log('EAPI 标准音质 data[0]:', standardResult.data?.[0])
 
     if (standardResult.code === 200 && standardResult.data && standardResult.data[0] && standardResult.data[0].url) {
       // 通过代理服务器转发音频流
       const originalUrl = standardResult.data[0].url
-      return `http://localhost:3001/proxy/audio?url=${encodeURIComponent(originalUrl)}`
+      return `${baseUrl}/proxy/audio?url=${encodeURIComponent(originalUrl)}`
     }
 
     throw new Error('无法获取播放链接，该歌曲可能需要 VIP 或不可用')
@@ -216,9 +229,8 @@ export async function getSongUrl(id: number, quality: string = DEFAULT_QUALITY):
 // 获取歌词
 export async function getLyric(id: number): Promise<Lyric> {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const url = `${baseUrl}/api/song/lyric`
+    const baseUrl = getApiBaseUrl()
+    const url = `${baseUrl}/proxy/api/song/lyric`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -257,9 +269,8 @@ export async function getLyric(id: number): Promise<Lyric> {
 // 获取每日推荐歌曲
 export async function getRecommendSongs(limit = 10): Promise<Song[]> {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const response = await fetch(`${baseUrl}/api/personalized/newsong?limit=${limit}`)
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/proxy/api/personalized/newsong?limit=${limit}`)
     const data = await response.json()
 
     if (data.code === 200 && data.result) {
@@ -289,9 +300,8 @@ export async function getRecommendSongs(limit = 10): Promise<Song[]> {
 // 获取推荐歌单
 export async function getRecommendPlaylists(limit = 10) {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const response = await fetch(`${baseUrl}/api/personalized/playlist?limit=${limit}`)
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/proxy/api/personalized/playlist?limit=${limit}`)
     const data = await response.json()
 
     console.log('推荐歌单响应:', data)
@@ -311,9 +321,8 @@ export async function getRecommendPlaylists(limit = 10) {
 // 获取歌单详情
 export async function getPlaylistDetail(id: number) {
   try {
-    // Electron 环境使用完整 URL，Web 环境使用相对路径
-    const baseUrl = import.meta.env.VITE_ELECTRON ? 'http://localhost:3001' : ''
-    const response = await fetch(`${baseUrl}/api/playlist/detail?id=${id}`)
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/proxy/api/playlist/detail?id=${id}`)
     const data = await response.json()
 
     if (data.code === 200 && data.result) {
@@ -377,14 +386,59 @@ export async function getArtistDetail(id: number) {
   }
 }
 
+// 获取热门歌曲（飙升榜）
+export async function getHotSongs(limit = 50): Promise<Song[]> {
+  try {
+    const baseUrl = getApiBaseUrl()
+    // 使用飙升榜 ID: 19723756
+    const response = await fetch(`${baseUrl}/proxy/api/playlist/detail?id=19723756`)
+    const data = await response.json()
+
+    console.log('热门歌曲响应:', data)
+    console.log('热门歌曲响应结构:', data.result)
+
+    // 检查 data.result 或 data.playlist
+    const playlist = data.result || data.playlist
+
+    if (data.code === 200 && playlist && playlist.tracks) {
+      console.log('找到歌曲列表，数量:', playlist.tracks.length)
+      const songs = playlist.tracks.slice(0, limit).map((song: any) => ({
+        id: song.id,
+        name: song.name,
+        artists: song.ar ? song.ar.map((artist: any) => ({
+          id: artist.id,
+          name: artist.name
+        })) : (song.artists ? song.artists.map((artist: any) => ({
+          id: artist.id,
+          name: artist.name
+        })) : []),
+        album: {
+          id: song.al ? song.al.id : song.album.id,
+          name: song.al ? song.al.name : song.album.name,
+          picUrl: song.al ? song.al.picUrl : song.album.picUrl
+        },
+        duration: song.dt || song.duration
+      }))
+      console.log('处理后的歌曲列表:', songs)
+      return songs
+    }
+
+    console.warn('未找到歌曲数据，返回结构:', data)
+    return []
+  } catch (error) {
+    console.error('获取热门歌曲失败:', error)
+    return []
+  }
+}
+
 // ==================== 登录相关 API ====================
 
 // 生成二维码 key
 export async function generateQRKey(): Promise<string> {
   try {
+    const baseUrl = getApiBaseUrl()
     const timestamp = Date.now()
-    // 使用本地代理服务器
-    const response = await fetch(`http://localhost:3001/login/qr/key?timestamp=${timestamp}`)
+    const response = await fetch(`${baseUrl}/login/qr/key?timestamp=${timestamp}`)
     const data = await response.json()
 
     console.log('生成二维码 key 响应:', data)
@@ -427,9 +481,9 @@ export async function checkQRStatus(key: string): Promise<{
   cookie?: string
 }> {
   try {
+    const baseUrl = getApiBaseUrl()
     const timestamp = Date.now()
-    // 使用本地代理服务器
-    const response = await fetch(`http://localhost:3001/login/qr/check?key=${key}&timestamp=${timestamp}`, {
+    const response = await fetch(`${baseUrl}/login/qr/check?key=${key}&timestamp=${timestamp}`, {
       credentials: 'include' // 重要：允许接收 cookie
     })
     const data = await response.json()
@@ -462,9 +516,9 @@ export async function getLoginStatus(): Promise<{
   profile?: any
 }> {
   try {
+    const baseUrl = getApiBaseUrl()
     const timestamp = Date.now()
-    // 使用本地代理服务器
-    const response = await fetch(`http://localhost:3001/login/status?timestamp=${timestamp}`, {
+    const response = await fetch(`${baseUrl}/login/status?timestamp=${timestamp}`, {
       credentials: 'include'
     })
     const data = await response.json()

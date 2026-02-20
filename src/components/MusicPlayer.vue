@@ -16,30 +16,81 @@
       <div class="song-info" @click="goToPlayPage">
         <img :src="playerStore.currentSong.album.picUrl" :alt="playerStore.currentSong.name" class="album-cover" />
         <div class="info-text">
-          <div class="song-name">{{ playerStore.currentSong.name }}</div>
-          <div class="artist-name">{{ playerStore.currentSong.artists.map(a => a.name).join(' / ') }}</div>
+          <div ref="songNameRef" class="song-name" :class="{ marquee: needMarqueeSongName }">
+            <span :data-text="playerStore.currentSong.name">{{ playerStore.currentSong.name }}</span>
+          </div>
+          <div ref="artistNameRef" class="artist-name" :class="{ marquee: needMarqueeArtist }">
+            <span :data-text="playerStore.currentSong.artists.map(a => a.name).join(' / ')">{{ playerStore.currentSong.artists.map(a => a.name).join(' / ') }}</span>
+          </div>
         </div>
       </div>
 
       <div class="player-controls">
         <div class="control-buttons">
-          <div class="quality-selector">
-            <button @click="toggleQualityMenu" class="quality-btn" :title="`当前音质: ${currentQualityLabel}`">
+          <button @click="playerStore.togglePlaylist" class="playlist-btn mobile-only" :class="{ active: playerStore.showPlaylist }" :title="playerStore.showPlaylist ? '隐藏播放列表' : '显示播放列表'">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
+              <path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/>
+            </svg>
+          </button>
+          <div class="settings-selector mobile-only">
+            <button @click="toggleSettingsMenu" class="settings-btn" title="播放器设置">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
-                <path d="M499.1 6.3c8.1 6 12.9 15.6 12.9 25.7l0 72 0 264c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L448 147 192 223.8 192 432c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L128 200l0-72c0-14.1 9.3-26.6 22.8-30.7l320-96c9.7-2.9 20.2-1.1 28.3 5z"/>
+                <path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>
               </svg>
+              <span class="settings-label">设置</span>
+            </button>
+            <div v-if="showSettingsMenu" class="settings-menu" @click.stop>
+              <div class="menu-section">
+                <div class="menu-section-title">音质选择</div>
+                <div
+                  v-for="option in qualityOptions"
+                  :key="option.value"
+                  class="quality-option"
+                  :class="{ active: playerStore.musicQuality === option.value }"
+                  @click="changeQuality(option.value)"
+                >
+                  <span class="option-label">{{ option.label }}</span>
+                  <span class="option-desc">{{ option.desc }}</span>
+                </div>
+              </div>
+              <div class="menu-divider"></div>
+              <div class="menu-section">
+                <div class="menu-section-title">音量调节</div>
+                <div class="volume-control-inline">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon-svg volume-icon-small">
+                    <path fill="currentColor" d="M533.6 32.5C598.5 85.2 640 165.8 640 256s-41.5 170.7-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64l0 384c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352 64 352c-35.3 0-64-28.7-64-64l0-64c0-35.3 28.7-64 64-64l67.8 0L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z"/>
+                  </svg>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    v-model.number="playerStore.volume"
+                    @input="updateVolume"
+                    class="volume-slider-inline"
+                  />
+                  <span class="volume-value">{{ Math.round(playerStore.volume * 100) }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="quality-selector desktop-only">
+            <button @click="toggleQualityMenu" class="quality-btn" :title="'当前音质：' + currentQualityLabel">
               <span class="quality-label">{{ currentQualityLabel }}</span>
             </button>
-            <div v-if="showQualityMenu" class="quality-menu">
-              <div
-                v-for="option in qualityOptions"
-                :key="option.value"
-                class="quality-option"
-                :class="{ active: playerStore.musicQuality === option.value }"
-                @click="changeQuality(option.value)"
-              >
-                <span class="option-label">{{ option.label }}</span>
-                <span class="option-desc">{{ option.desc }}</span>
+            <div v-if="showQualityMenu" class="quality-menu" @click.stop>
+              <div class="menu-section">
+                <div class="menu-section-title">音质选择</div>
+                <div
+                  v-for="option in qualityOptions"
+                  :key="option.value"
+                  class="quality-option"
+                  :class="{ active: playerStore.musicQuality === option.value }"
+                  @click="changeQuality(option.value)"
+                >
+                  <span class="option-label">{{ option.label }}</span>
+                  <span class="option-desc">{{ option.desc }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -50,8 +101,11 @@
             <svg v-else-if="playerStore.playMode === 'loop'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
               <path d="M0 224c0 17.7 14.3 32 32 32s32-14.3 32-32c0-53 43-96 96-96l160 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c12.5 12.5 12.5 32.8 0 45.3l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-32L160 192c-53 0-96 43-96 96zm192 96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0 0-32zm288-32c0-17.7-14.3-32-32-32s-32 14.3-32 32c0 53-43 96-96 96l-160 0 0 32c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-64-64c-12.5-12.5-12.5-32.8 0-45.3l64-64c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 32 160 0c88.4 0 160 71.6 160 160z"/>
             </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
+            <svg v-else-if="playerStore.playMode === 'random'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
               <path d="M403.8 34.4c12-5 25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-32-32 0c-10.1 0-19.6 4.7-25.6 12.8L284 229.3 244 176l31.2-41.6C293.3 110.2 321.8 96 352 96l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6zM164 282.7L204 336l-31.2 41.6C154.7 401.8 126.2 416 96 416l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c10.1 0 19.6-4.7 25.6-12.8L164 282.7zm274.6 188c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-32-32 0c-30.2 0-58.7-14.2-76.8-38.4L121.6 172.8c-6-8.1-15.5-12.8-25.6-12.8l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c30.2 0 58.7 14.2 76.8 38.4L326.4 339.2c6 8.1 15.5 12.8 25.6 12.8l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64z"/>
+            </svg>
+            <svg v-else-if="playerStore.playMode === 'recommend'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
+              <path d="M499.1 6.3c8.1 6 12.9 15.6 12.9 25.7l0 72 0 264c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L448 147 192 223.8 192 432c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L128 200l0-72c0-14.1 9.3-26.6 22.8-30.7l320-96c9.7-2.9 20.2-1.1 28.3 5z"/>
             </svg>
           </button>
           <button @click="playerStore.prevSong" :disabled="!playerStore.hasPrev" class="control-btn">
@@ -113,7 +167,7 @@
             class="volume-slider"
           />
         </div>
-        <button @click="playerStore.togglePlaylist" class="playlist-btn" :class="{ active: playerStore.showPlaylist }" :title="playerStore.showPlaylist ? '隐藏播放列表' : '显示播放列表'">
+        <button @click="playerStore.togglePlaylist" class="playlist-btn desktop-only" :class="{ active: playerStore.showPlaylist }" :title="playerStore.showPlaylist ? '隐藏播放列表' : '显示播放列表'">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
             <path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/>
           </svg>
@@ -124,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import { getSongUrl } from '@/api/netease'
@@ -138,7 +192,55 @@ const isInitialLoad = ref(true) // 标记是否是首次加载
 const savedCurrentTime = ref(playerStore.currentTime) // 保存初始播放进度
 const shouldUpdateTime = ref(false) // 控制是否更新播放进度
 const hasRestoredProgress = ref(false) // 标记是否已恢复进度
-const showQualityMenu = ref(false) // 显示音质菜单
+const showSettingsMenu = ref(false) // 显示设置菜单（移动端）
+const showQualityMenu = ref(false) // 显示音质菜单（桌面端）
+
+// 跑马灯相关
+const songNameRef = ref<HTMLElement>()
+const artistNameRef = ref<HTMLElement>()
+const needMarqueeSongName = ref(false)
+const needMarqueeArtist = ref(false)
+
+// 检测文本是否溢出（被截断）
+function checkTextOverflow() {
+  if (typeof window === 'undefined') return
+  const isMobile = window.innerWidth <= 768
+  if (!isMobile) {
+    needMarqueeSongName.value = false
+    needMarqueeArtist.value = false
+    return
+  }
+
+  nextTick(() => {
+    // 检测歌名是否溢出
+    if (songNameRef.value) {
+      const element = songNameRef.value
+      needMarqueeSongName.value = element.scrollWidth > element.clientWidth
+    }
+
+    // 检测歌手名是否溢出
+    if (artistNameRef.value) {
+      const element = artistNameRef.value
+      needMarqueeArtist.value = element.scrollWidth > element.clientWidth
+    }
+  })
+}
+
+// 监听歌曲变化，重新检测
+watch(() => playerStore.currentSong, () => {
+  checkTextOverflow()
+})
+
+// 监听窗口大小变化
+onMounted(() => {
+  checkTextOverflow()
+  window.addEventListener('resize', checkTextOverflow)
+})
+
+// 清理
+onUnmounted(() => {
+  window.removeEventListener('resize', checkTextOverflow)
+})
 
 // 音质选项
 const qualityOptions = [
@@ -157,12 +259,12 @@ const currentQualityLabel = computed(() => {
 })
 
 const playModeIcon = computed(() => {
-  const icons = { sequence: '🔁', loop: '🔂', random: '🔀' }
+  const icons = { sequence: '🔁', loop: '🔂', random: '🔀', recommend: '🎵' }
   return icons[playerStore.playMode]
 })
 
 const playModeText = computed(() => {
-  const texts = { sequence: '顺序播放', loop: '单曲循环', random: '随机播放' }
+  const texts = { sequence: '顺序播放', loop: '单曲循环', random: '随机播放', recommend: '推荐模式' }
   return texts[playerStore.playMode]
 })
 
@@ -235,9 +337,17 @@ watch(() => playerStore.currentSong, async (newSong, oldSong) => {
   }
 }, { immediate: true })
 
-watch(() => playerStore.isPlaying, (playing) => {
+// 添加播放状态锁，防止快速切换导致冲突
+const isPlayPending = ref(false)
+
+watch(() => playerStore.isPlaying, async (playing) => {
   if (audioRef.value && audioUrl.value) {
     if (playing) {
+      // 如果正在处理播放请求，忽略
+      if (isPlayPending.value) return
+
+      isPlayPending.value = true
+
       // 启用时间更新
       shouldUpdateTime.value = true
       // 如果是首次播放且有保存的进度且还没恢复过，先恢复进度
@@ -245,11 +355,20 @@ watch(() => playerStore.isPlaying, (playing) => {
         audioRef.value.currentTime = savedCurrentTime.value
         hasRestoredProgress.value = true
       }
-      audioRef.value.play().catch(err => {
-        console.error('播放失败:', err)
-        playerStore.isPlaying = false
-      })
+
+      try {
+        await audioRef.value.play()
+      } catch (err: any) {
+        // 忽略 AbortError（用户主动暂停导致的中断）
+        if (err.name !== 'AbortError') {
+          console.error('播放失败:', err)
+          playerStore.isPlaying = false
+        }
+      } finally {
+        isPlayPending.value = false
+      }
     } else {
+      // 暂停操作
       audioRef.value.pause()
     }
   }
@@ -390,12 +509,17 @@ function goToPlayPage() {
   router.push('/play')
 }
 
+function toggleSettingsMenu() {
+  showSettingsMenu.value = !showSettingsMenu.value
+}
+
 function toggleQualityMenu() {
   showQualityMenu.value = !showQualityMenu.value
 }
 
 async function changeQuality(quality: string) {
   if (quality === playerStore.musicQuality) {
+    showSettingsMenu.value = false
     showQualityMenu.value = false
     return
   }
@@ -406,6 +530,7 @@ async function changeQuality(quality: string) {
   try {
     // 设置新音质
     playerStore.setMusicQuality(quality as any)
+    showSettingsMenu.value = false
     showQualityMenu.value = false
 
     // 如果有正在播放的歌曲，重新加载
@@ -458,16 +583,17 @@ async function changeQuality(quality: string) {
   }
 }
 
-// 点击外部关闭音质菜单
+// 点击外部关闭设置菜单和音质菜单
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
-  if (!target.closest('.quality-selector')) {
+  if (!target.closest('.settings-selector') && !target.closest('.quality-selector')) {
+    showSettingsMenu.value = false
     showQualityMenu.value = false
   }
 }
 
-watch(showQualityMenu, (show) => {
-  if (show) {
+watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
+  if (showSettings || showQuality) {
     document.addEventListener('click', handleClickOutside)
   } else {
     document.removeEventListener('click', handleClickOutside)
@@ -484,8 +610,9 @@ watch(showQualityMenu, (show) => {
   background: linear-gradient(135deg, #1a2a32 0%, #305669 100%);
   border-top: 1px solid rgba(183, 229, 205, 0.2);
   padding: 16px 24px;
-  z-index: 1000;
+  z-index: 1001;
   backdrop-filter: blur(20px);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .player-content {
@@ -553,6 +680,41 @@ watch(showQualityMenu, (show) => {
   max-width: 200px;
 }
 
+/* 移动端跑马灯效果 */
+@media (max-width: 768px) {
+  .song-name.marquee,
+  .artist-name.marquee {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    max-width: calc(100vw - 140px);
+    mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  }
+
+  .song-name.marquee span,
+  .artist-name.marquee span {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 15s linear infinite;
+    will-change: transform;
+  }
+
+  .song-name.marquee span::after,
+  .artist-name.marquee span::after {
+    content: '   •   ' attr(data-text);
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+}
+
 .player-controls {
   flex: 1;
   display: flex;
@@ -598,11 +760,11 @@ watch(showQualityMenu, (show) => {
   cursor: not-allowed;
 }
 
-.quality-selector {
+.settings-selector {
   position: relative;
 }
 
-.quality-btn {
+.settings-btn {
   background: none;
   border: none;
   color: #fff;
@@ -616,22 +778,22 @@ watch(showQualityMenu, (show) => {
   gap: 6px;
 }
 
-.quality-btn:hover {
+.settings-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.quality-btn .icon-svg {
+.settings-btn .icon-svg {
   width: 16px;
   height: 16px;
   fill: currentColor;
 }
 
-.quality-label {
+.settings-label {
   font-size: 13px;
   font-weight: 500;
 }
 
-.quality-menu {
+.settings-menu {
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -642,10 +804,50 @@ watch(showQualityMenu, (show) => {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  padding: 8px;
-  min-width: 140px;
+  padding: 12px;
+  min-width: 240px;
+  max-width: 90vw;
+  max-height: 60vh;
+  overflow-y: auto;
   z-index: 1000;
   animation: slideUp 0.2s ease;
+}
+
+.settings-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.settings-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.menu-section {
+  margin-bottom: 8px;
+}
+
+.menu-section:last-child {
+  margin-bottom: 0;
+}
+
+.menu-section-title {
+  font-size: clamp(11px, 2.8vw, 12px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding: 0 6px;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 12px 0;
 }
 
 @keyframes slideUp {
@@ -663,11 +865,16 @@ watch(showQualityMenu, (show) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
+}
+
+.quality-option:last-child {
+  margin-bottom: 0;
 }
 
 .quality-option:hover {
@@ -681,13 +888,93 @@ watch(showQualityMenu, (show) => {
 }
 
 .option-label {
-  font-size: 14px;
+  font-size: clamp(12px, 3.2vw, 13px);
   font-weight: 500;
 }
 
 .option-desc {
-  font-size: 12px;
+  font-size: clamp(10px, 2.8vw, 11px);
   opacity: 0.7;
+}
+
+.volume-control-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.volume-icon-small {
+  width: 18px;
+  height: 18px;
+  fill: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.volume-slider-inline {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  border-radius: 2px;
+  outline: none;
+  border: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.volume-slider-inline::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
+}
+
+.volume-slider-inline::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #8ABEB9;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -4px;
+}
+
+.volume-slider-inline::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
+}
+
+.volume-slider-inline::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #8ABEB9;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.volume-value {
+  font-size: clamp(11px, 3vw, 12px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 38px;
+  text-align: right;
 }
 
 .play-btn {
@@ -799,6 +1086,9 @@ watch(showQualityMenu, (show) => {
   width: 140px;
   flex-shrink: 0;
   color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  padding: 0;
+  margin: 0;
 }
 
 .volume-control .icon-svg {
@@ -826,6 +1116,77 @@ watch(showQualityMenu, (show) => {
   height: 40px;
 }
 
+/* 默认隐藏移动端按钮 */
+.mobile-only {
+  display: none;
+}
+
+/* 默认隐藏桌面端按钮 */
+.desktop-only {
+  display: flex;
+}
+
+/* 音质选择器（桌面端） */
+.quality-selector {
+  position: relative;
+}
+
+.quality-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.quality-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.quality-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quality-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  background: rgba(26, 42, 50, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  min-width: 240px;
+  max-width: 90vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: slideUp 0.2s ease;
+}
+
+.quality-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.quality-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quality-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
 .playlist-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);
@@ -846,10 +1207,38 @@ watch(showQualityMenu, (show) => {
   flex: 1;
   height: 4px;
   -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   border-radius: 2px;
   outline: none;
+  border: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* 移除所有浏览器的焦点样式 */
+.volume-slider:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
+}
+
+.volume-slider:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* WebKit/Blink 浏览器 (Chrome, Safari, Edge) */
+.volume-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -860,6 +1249,23 @@ watch(showQualityMenu, (show) => {
   background: #8ABEB9;
   border-radius: 50%;
   cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.volume-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 2px 6px rgba(138, 190, 185, 0.4);
+}
+
+/* Firefox */
+.volume-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
 }
 
 .volume-slider::-moz-range-thumb {
@@ -869,6 +1275,286 @@ watch(showQualityMenu, (show) => {
   border-radius: 50%;
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.volume-slider:focus::-moz-range-thumb {
+  box-shadow: 0 2px 6px rgba(138, 190, 185, 0.4);
+}
+
+/* IE/Edge */
+.volume-slider::-ms-track {
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+  border: none;
+}
+
+.volume-slider::-ms-fill-lower {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
+}
+
+.volume-slider::-ms-fill-upper {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  border: none;
+}
+
+.volume-slider::-ms-thumb {
+  width: 12px;
+  height: 12px;
+  background: #8ABEB9;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: 0;
+}
+
+.volume-slider:focus::-ms-thumb {
+  box-shadow: 0 2px 6px rgba(138, 190, 185, 0.4);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .music-player {
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .player-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .song-info {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 8px;
+    margin: -8px;
+  }
+
+  .album-cover {
+    width: 52px;
+    height: 52px;
+  }
+
+  .song-name {
+    font-size: 14px;
+    max-width: calc(100vw - 140px);
+  }
+
+  .artist-name {
+    font-size: 12px;
+    max-width: calc(100vw - 140px);
+  }
+
+  .player-controls {
+    width: 100%;
+  }
+
+  /* 移动端隐藏音质按钮，显示设置按钮 */
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .control-buttons {
+    gap: 4px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  /* 隐藏移动端不常用的按钮 */
+  .share-btn {
+    display: none;
+  }
+
+  /* 移动端显示设置按钮 */
+  .settings-selector {
+    display: block;
+  }
+
+  .control-btn, .mode-btn, .fav-btn {
+    padding: 8px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .icon-svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .play-btn {
+    width: 52px;
+    height: 52px;
+    margin: 0 4px;
+  }
+
+  .play-btn .icon-svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .progress-bar {
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .time {
+    font-size: 11px;
+    min-width: 38px;
+  }
+
+  .progress-container {
+    padding: 10px 0;
+  }
+
+  .progress-bg {
+    height: 5px;
+  }
+
+  .right-controls {
+    width: 100%;
+    justify-content: space-between;
+    min-width: 0;
+    gap: 12px;
+    margin-top: 4px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .volume-control {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .volume-control .icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .playlist-btn {
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+    flex-shrink: 0;
+  }
+
+  .playlist-btn .icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 移动端隐藏桌面播放列表按钮 */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* 移动端显示移动播放列表按钮 */
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .music-player {
+    padding: 8px 10px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .song-info {
+    padding: 6px;
+    margin: -6px;
+  }
+
+  .album-cover {
+    width: 48px;
+    height: 48px;
+  }
+
+  .song-name {
+    font-size: 13px;
+  }
+
+  .artist-name {
+    font-size: 11px;
+  }
+
+  .control-buttons {
+    gap: 2px;
+  }
+
+  .control-btn, .mode-btn, .fav-btn {
+    padding: 6px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .icon-svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .play-btn {
+    width: 48px;
+    height: 48px;
+    margin: 0 2px;
+  }
+
+  .play-btn .icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .time {
+    font-size: 10px;
+    min-width: 35px;
+  }
+
+  .volume-control .icon-svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .playlist-btn {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+  }
+
+  .playlist-btn .icon-svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .control-btn, .mode-btn, .fav-btn, .share-btn, .play-btn, .playlist-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .progress-container {
+    padding: 12px 0;
+  }
+
+  .progress-bg {
+    height: 6px;
+  }
 }
 </style>
 
