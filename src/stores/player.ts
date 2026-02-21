@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import type { Song } from '@/api/netease'
-import { getSongUrl, getHotSongs } from '@/api/netease'
+import { getSongUrl, getHotSongs, getLyric } from '@/api/netease'
 import { loadConfig, saveConfig } from '@/utils/storage'
 import { QualityLevel } from '@/config/api'
+import { parseLyric, type LyricLine } from '@/utils/lyric'
+import { isElectron, sendToMain, onMainMessage } from '@/utils/electron-bridge'
 
 export type PlayMode = 'sequence' | 'loop' | 'random' | 'recommend'
 export type MusicQuality = 'standard' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster'
@@ -26,6 +28,15 @@ export const usePlayerStore = defineStore('player', () => {
   const favoriteSongs = ref<Map<number, Song>>(new Map(config.favoriteSongs || []))
   const showPlaylist = ref(false) // 播放列表显示状态
   const musicQuality = ref<MusicQuality>(config.musicQuality || 'lossless') // 音质设置
+
+  // 桌面歌词相关状态（仅在 Electron 环境中使用）
+  const showDesktopLyric = ref(false)
+  const parsedLyrics = ref<LyricLine[]>([])
+  const parsedLyricsTrans = ref<LyricLine[]>([])
+  const currentLyricText = ref('')
+  const isLyricLocked = ref(false)
+  const lyricWindowSize = ref<'small' | 'medium' | 'large'>('medium')
+  const lyricWindowOrientation = ref<'horizontal' | 'vertical'>('horizontal')
 
   console.log('Player Store 初始化 - 设置的音质:', musicQuality.value)
 
@@ -264,6 +275,122 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('setMusicQuality 被调用 - 验证保存的音质:', saved.musicQuality)
   }
 
+  // 桌面歌词相关方法
+  /**
+   * 加载歌词（仅在 Electron 环境中）
+   */
+  async function loadLyric(songId: number) {
+    if (!isElectron()) return
+
+    try {
+      console.log('开始加载歌词，歌曲ID:', songId)
+      const lyric = await getLyric(songId)
+      console.log('获取到的歌词数据:', lyric)
+      
+      // 解析原文歌词
+      parsedLyrics.value = parseLyric(lyric.lrc.lyric)
+      console.log('解析后的歌词数量:', parsedLyrics.value.length)
+      
+      // 解析翻译歌词（如果有）
+      if (lyric.tlyric && lyric.tlyric.lyric) {
+        parsedLyricsTrans.value = parseLyric(lyric.tlyric.lyric)
+        console.log('解析后的翻译歌词数量:', parsedLyricsTrans.value.length)
+      } else {
+        parsedLyricsTrans.value = []
+        console.log('没有翻译歌词')
+      }
+
+      if (showDesktopLyric.value) {
+        console.log('歌词窗口已打开，发送歌词')
+        // 转换为普通数组，避免 IPC 序列化错误
+        const lyricsData = JSON.parse(JSON.stringify(parsedLyrics.value))
+        const lyricsTransData = JSON.parse(JSON.stringify(parsedLyricsTrans.value))
+        sendToMain('update-lyric', { 
+          lyrics: lyricsData,
+          lyricsTrans: lyricsTransData
+        })
+      }
+    } catch (error) {
+      console.error('加载歌词失败:', error)
+      parsedLyrics.value = []
+      parsedLyricsTrans.value = []
+    }
+  }
+
+  /**
+   * 切换桌面歌词显示/隐藏
+   */
+  async function toggleDesktopLyric() {
+    if (!isElectron()) return
+
+    // 如果歌词窗口已锁定，先解锁
+    if (isLyricLocked.value) {
+      console.log('歌词窗口已锁定，先解锁')
+      unlockLyric()
+      return
+    }
+
+    // 切换显示/隐藏
+    showDesktopLyric.value = !showDesktopLyric.value
+    sendToMain('toggle-lyric-window', showDesktopLyric.value)
+
+    if (showDesktopLyric.value) {
+      // 如果有当前歌曲但没有歌词，先加载歌词
+      if (currentSong.value && parsedLyrics.value.length === 0) {
+        console.log('打开桌面歌词时没有歌词数据，立即加载')
+        await loadLyric(currentSong.value.id)
+      }
+
+      // 发送歌词数据到窗口
+      if (parsedLyrics.value.length > 0) {
+        const lyricsData = JSON.parse(JSON.stringify(parsedLyrics.value))
+        const lyricsTransData = JSON.parse(JSON.stringify(parsedLyricsTrans.value))
+        console.log('发送歌词到歌词窗口，数量:', lyricsData.length)
+        sendToMain('update-lyric', { 
+          lyrics: lyricsData,
+          lyricsTrans: lyricsTransData
+        })
+        // 同时发送当前播放时间
+        sendToMain('update-current-time', currentTime.value)
+      }
+    }
+  }
+
+  /**
+   * 解锁歌词窗口
+   */
+  function unlockLyric() {
+    if (!isElectron()) return
+    console.log('解锁歌词窗口')
+    isLyricLocked.value = false
+    sendToMain('unlock-lyric-window')
+  }
+
+  /**
+   * 设置歌词锁定状态（从歌词窗口接收）
+   */
+  function setLyricLocked(locked: boolean) {
+    isLyricLocked.value = locked
+  }
+
+  /**
+   * 设置歌词窗口大小
+   */
+  function setLyricWindowSize(size: 'small' | 'medium' | 'large') {
+    if (!isElectron()) return
+    lyricWindowSize.value = size
+    sendToMain('set-lyric-window-size', size)
+  }
+
+  /**
+   * 切换歌词窗口方向
+   */
+  function toggleLyricOrientation() {
+    if (!isElectron()) return
+    lyricWindowOrientation.value = lyricWindowOrientation.value === 'horizontal' ? 'vertical' : 'horizontal'
+    sendToMain('set-lyric-orientation', lyricWindowOrientation.value)
+  }
+
   // 重新加载配置（用于导入数据后刷新状态）
   function reloadConfig() {
     const config = loadConfig()
@@ -298,6 +425,85 @@ export const usePlayerStore = defineStore('player', () => {
     })
   }
 
+  // 监听歌曲变化，自动加载歌词（仅在 Electron 环境中）
+  watch(() => currentSong.value, async (song) => {
+    console.log('歌曲变化监听触发，歌曲:', song)
+    console.log('是否 Electron 环境:', isElectron())
+    if (song && isElectron()) {
+      console.log('准备加载歌词，歌曲ID:', song.id)
+      await loadLyric(song.id)
+
+      // 如果桌面歌词窗口已打开，立即发送新歌词
+      if (showDesktopLyric.value && parsedLyrics.value.length > 0) {
+        console.log('桌面歌词已打开，发送新歌词到窗口')
+        const lyricsData = JSON.parse(JSON.stringify(parsedLyrics.value))
+        const lyricsTransData = JSON.parse(JSON.stringify(parsedLyricsTrans.value))
+        sendToMain('update-lyric', { 
+          lyrics: lyricsData,
+          lyricsTrans: lyricsTransData
+        })
+        // 重置播放时间为0，确保歌词从头开始
+        sendToMain('update-current-time', 0)
+      }
+    }
+  }, { immediate: true })
+
+  // 监听播放时间，更新当前歌词（仅在 Electron 环境中）
+  watch(() => currentTime.value, (time) => {
+    if (isElectron() && showDesktopLyric.value && parsedLyrics.value.length > 0) {
+      sendToMain('update-current-time', time)
+    }
+  })
+
+  // 监听播放状态变化，确保桌面歌词有数据（仅在 Electron 环境中）
+  watch(() => isPlaying.value, async (playing) => {
+    if (playing && isElectron() && showDesktopLyric.value && currentSong.value) {
+      console.log('播放状态变化，检查桌面歌词数据')
+
+      // 如果没有歌词数据，立即加载
+      if (parsedLyrics.value.length === 0) {
+        console.log('开始播放时检测到桌面歌词无数据，立即加载')
+        await loadLyric(currentSong.value.id)
+      }
+
+      // 无论是否刚加载，都发送到窗口（确保窗口有数据）
+      if (parsedLyrics.value.length > 0) {
+        console.log('发送歌词数据到桌面歌词窗口')
+        const lyricsData = JSON.parse(JSON.stringify(parsedLyrics.value))
+        const lyricsTransData = JSON.parse(JSON.stringify(parsedLyricsTrans.value))
+        sendToMain('update-lyric', { 
+          lyrics: lyricsData,
+          lyricsTrans: lyricsTransData
+        })
+        sendToMain('update-current-time', currentTime.value)
+      }
+    }
+  })
+
+  // 在 Electron 环境中，使用定时器确保时间更新（即使不在播放器页面）
+  if (typeof window !== 'undefined' && isElectron()) {
+    let timeUpdateInterval: number | null = null
+
+    watch(() => isPlaying.value, (playing) => {
+      if (playing) {
+        // 开始播放时，启动定时器更新时间
+        if (!timeUpdateInterval) {
+          timeUpdateInterval = window.setInterval(() => {
+            if (isPlaying.value && duration.value > 0) {
+              currentTime.value = Math.min(currentTime.value + 0.1, duration.value)
+            }
+          }, 100) // 每100ms更新一次
+        }
+      } else {
+        // 暂停时，清除定时器
+        if (timeUpdateInterval) {
+          clearInterval(timeUpdateInterval)
+          timeUpdateInterval = null
+        }
+      }
+    })
+  }
+
   // 延迟启动监听器，避免在初始化时触发保存
   let watchersEnabled = false
   setTimeout(() => {
@@ -327,6 +533,42 @@ export const usePlayerStore = defineStore('player', () => {
     window.addEventListener('beforeunload', () => {
       savePlayState()
     })
+
+    // 监听歌词锁定状态变化（从歌词窗口）
+    if (isElectron()) {
+      onMainMessage('lyric-lock-changed', (locked: boolean) => {
+        console.log('收到歌词锁定状态变化:', locked)
+        isLyricLocked.value = locked
+      })
+
+      // 监听歌词窗口关闭事件
+      onMainMessage('lyric-window-closed', () => {
+        console.log('收到歌词窗口关闭通知')
+        showDesktopLyric.value = false
+        isLyricLocked.value = false
+      })
+
+      // 监听恢复桌面歌词状态
+      onMainMessage('restore-lyric-window-state', (isVisible: boolean) => {
+        console.log('恢复桌面歌词状态:', isVisible)
+        showDesktopLyric.value = isVisible
+        
+        // 如果有当前歌曲，加载歌词
+        if (isVisible && currentSong.value) {
+          loadLyric(currentSong.value.id).then(() => {
+            if (parsedLyrics.value.length > 0) {
+              const lyricsData = JSON.parse(JSON.stringify(parsedLyrics.value))
+              const lyricsTransData = JSON.parse(JSON.stringify(parsedLyricsTrans.value))
+              sendToMain('update-lyric', { 
+                lyrics: lyricsData,
+                lyricsTrans: lyricsTransData
+              })
+              sendToMain('update-current-time', currentTime.value)
+            }
+          })
+        }
+      })
+    }
   }
 
   return {
@@ -359,7 +601,17 @@ export const usePlayerStore = defineStore('player', () => {
     isFavorite,
     togglePlaylist,
     setMusicQuality,
-    reloadConfig
+    reloadConfig,
+    // 桌面歌词相关
+    showDesktopLyric,
+    toggleDesktopLyric,
+    currentLyricText,
+    isLyricLocked,
+    setLyricLocked,
+    lyricWindowSize,
+    setLyricWindowSize,
+    lyricWindowOrientation,
+    toggleLyricOrientation
   }
 })
 

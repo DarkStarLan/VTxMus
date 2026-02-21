@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>桌面歌词</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: transparent;
+      cursor: move;
+      -webkit-app-region: drag; /* 允许拖拽 */
+      position: relative;
+      border: 2px solid rgba(29, 185, 84, 0.6);
+      border-radius: 8px;
+      transition: border 0.3s ease;
+    }
+
+    /* 调整大小手柄 */
+    .resize-handle {
+      position: absolute;
+      background: transparent;
+      transition: background 0.2s;
+      -webkit-app-region: no-drag;
+      z-index: 100;
+    }
+
+    .resize-handle:hover {
+      background: rgba(29, 185, 84, 0.5);
+    }
+
+    .resize-handle.top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      cursor: ns-resize;
+    }
+
+    .resize-handle.bottom {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      cursor: ns-resize;
+    }
+
+    .resize-handle.left {
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      cursor: ew-resize;
+    }
+
+    .resize-handle.right {
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      cursor: ew-resize;
+    }
+
+    .resize-handle.top-left {
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+    }
+
+    .resize-handle.top-right {
+      top: 0;
+      right: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nesw-resize;
+    }
+
+    .resize-handle.bottom-left {
+      bottom: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nesw-resize;
+    }
+
+    .resize-handle.bottom-right {
+      bottom: 0;
+      right: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+    }
+
+    .lyric-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .current-lyric {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.6),
+        0 0 20px rgba(29, 185, 84, 0.3);
+      margin-bottom: 4px;
+      transition: all 0.3s ease;
+      line-height: 1.4;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    .next-lyric {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.6);
+      text-shadow: 
+        0 0 8px rgba(0, 0, 0, 0.6),
+        0 1px 3px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+      line-height: 1.4;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    /* 翻译歌词样式 */
+    .current-lyric-trans {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      text-shadow: 
+        0 0 8px rgba(0, 0, 0, 0.6),
+        0 1px 3px rgba(0, 0, 0, 0.4);
+      margin-top: 2px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+      line-height: 1.4;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    .next-lyric-trans {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.5);
+      text-shadow: 
+        0 0 6px rgba(0, 0, 0, 0.5),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+      margin-top: 2px;
+      transition: all 0.3s ease;
+      line-height: 1.4;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    /* 竖直模式下的阴影调整 */
+    body.vertical .current-lyric {
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.8),
+        2px 0 4px rgba(0, 0, 0, 0.6),
+        0 0 20px rgba(29, 185, 84, 0.3);
+    }
+
+    body.vertical .next-lyric {
+      text-shadow: 
+        0 0 8px rgba(0, 0, 0, 0.6),
+        1px 0 3px rgba(0, 0, 0, 0.4);
+    }
+
+    body.vertical .current-lyric-trans {
+      text-shadow: 
+        0 0 8px rgba(0, 0, 0, 0.6),
+        1px 0 3px rgba(0, 0, 0, 0.4);
+    }
+
+    body.vertical .next-lyric-trans {
+      text-shadow: 
+        0 0 6px rgba(0, 0, 0, 0.5),
+        1px 0 2px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 控制按钮区域 */
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag; /* 按钮区域不可拖拽 */
+    }
+
+    .control-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .control-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+      transform: scale(1.1);
+    }
+
+    .control-btn.active {
+      background: rgba(29, 185, 84, 0.8);
+    }
+
+    /* 字体大小指示器 */
+    #fontSizeIndicator {
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+
+    #fontSizeBtn:active #fontSizeIndicator {
+      transform: scale(1.2);
+    }
+
+    /* 字体大小变体 */
+    body.font-xsmall .current-lyric {
+      font-size: 20px;
+    }
+
+    body.font-xsmall .next-lyric {
+      font-size: 14px;
+    }
+
+    body.font-xsmall .current-lyric-trans {
+      font-size: 14px;
+    }
+
+    body.font-xsmall .next-lyric-trans {
+      font-size: 11px;
+    }
+
+    body.font-small .current-lyric {
+      font-size: 24px;
+    }
+
+    body.font-small .next-lyric {
+      font-size: 16px;
+    }
+
+    body.font-small .current-lyric-trans {
+      font-size: 16px;
+    }
+
+    body.font-small .next-lyric-trans {
+      font-size: 13px;
+    }
+
+    body.font-medium .current-lyric {
+      font-size: 32px;
+    }
+
+    body.font-medium .next-lyric {
+      font-size: 20px;
+    }
+
+    body.font-medium .current-lyric-trans {
+      font-size: 20px;
+    }
+
+    body.font-medium .next-lyric-trans {
+      font-size: 16px;
+    }
+
+    body.font-large .current-lyric {
+      font-size: 42px;
+    }
+
+    body.font-large .next-lyric {
+      font-size: 26px;
+    }
+
+    body.font-large .current-lyric-trans {
+      font-size: 26px;
+    }
+
+    body.font-large .next-lyric-trans {
+      font-size: 20px;
+    }
+
+    body.font-xlarge .current-lyric {
+      font-size: 56px;
+    }
+
+    body.font-xlarge .next-lyric {
+      font-size: 32px;
+    }
+
+    body.font-xlarge .current-lyric-trans {
+      font-size: 32px;
+    }
+
+    body.font-xlarge .next-lyric-trans {
+      font-size: 24px;
+    }
+
+    /* 歌词分组容器 */
+    .lyric-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 竖直模式 */
+    body.vertical .lyric-container {
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 20px;
+      padding-left: 30px;
+      padding-right: 60px;
+      gap: 0px;
+    }
+
+    body.vertical .lyric-group {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0px;
+      position: relative;
+      min-height: 100%;
+    }
+
+    body.vertical .current-lyric {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      margin-bottom: 0;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    body.vertical .current-lyric-trans {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      margin-top: 0;
+      margin-bottom: 0;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    body.vertical .next-lyric {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    body.vertical .next-lyric-trans {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      margin-top: 0;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    /* 当前歌词需要旋转时 */
+    body.vertical .current-lyric.rotate-text {
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
+      transform: rotate(90deg);
+      transform-origin: left top;
+      white-space: nowrap;
+      overflow: visible;
+      position: absolute;
+      left: 32px;
+      top: 0;
+      width: auto;
+      height: auto;
+    }
+
+    /* 下一句歌词需要旋转时 */
+    body.vertical .next-lyric.rotate-text {
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
+      transform: rotate(90deg);
+      transform-origin: left top;
+      white-space: nowrap;
+      overflow: visible;
+      position: absolute;
+      left: 32px;
+      top: 0;
+      width: auto;
+      height: auto;
+    }
+
+    /* 当歌词旋转时，为 lyric-group 添加足够的高度和宽度 */
+    body.vertical .lyric-group:has(.rotate-text) {
+      min-height: 200px;
+      align-items: flex-start;
+      padding-left: 32px;
+    }
+
+    /* 翻译永远不旋转 */
+    body.vertical .current-lyric-trans {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      transform: none;
+      margin-right: 0;
+      margin-left: 0;
+    }
+
+    body.vertical .next-lyric-trans {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      transform: none;
+      margin-right: 0;
+      margin-left: 0;
+    }
+
+    /* 当主歌词旋转时，翻译需要留出空间并对齐顶部 */
+    body.vertical .lyric-group:has(.rotate-text) .current-lyric-trans,
+    body.vertical .lyric-group:has(.rotate-text) .next-lyric-trans {
+      margin-left: 6px;
+      align-self: flex-start;
+    }
+
+    /* 根据字体大小动态调整 left 值，防止截断 */
+    body.vertical.font-large .current-lyric.rotate-text,
+    body.vertical.font-large .next-lyric.rotate-text {
+      left: 46px;
+    }
+
+    body.vertical.font-xlarge .current-lyric.rotate-text,
+    body.vertical.font-xlarge .next-lyric.rotate-text {
+      left: 60px;
+    }
+
+    body.vertical.font-large .lyric-group:has(.rotate-text) {
+      padding-left: 46px;
+    }
+
+    body.vertical.font-xlarge .lyric-group:has(.rotate-text) {
+      padding-left: 60px;
+    }
+
+    /* 隐藏下一句歌词 */
+    body.hide-next-lyric .next-lyric,
+    body.hide-next-lyric .next-lyric-trans,
+    body.hide-next-lyric .next-group {
+      display: none;
+    }
+
+    /* 竖直模式下按钮竖着排列 */
+    body.vertical .controls {
+      flex-direction: column;
+      top: 10px;
+      left: 10px;
+      right: auto;
+      bottom: auto;
+    }
+
+    /* 锁定状态下隐藏所有控制元素 */
+    body.locked .controls {
+      display: none !important;
+    }
+
+    body.locked .resize-handle {
+      display: none !important;
+    }
+
+    body.locked {
+      cursor: default !important;
+      border: none !important;
+    }
+
+    /* 穿透模式提示 */
+    .lock-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.3);
+      opacity: 0;
+      transition: opacity 0.3s;
+      display: none;
+    }
+
+    body.locked .lock-hint {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- 调整大小手柄 -->
+  <div class="resize-handle top"></div>
+  <div class="resize-handle bottom"></div>
+  <div class="resize-handle left"></div>
+  <div class="resize-handle right"></div>
+  <div class="resize-handle top-left"></div>
+  <div class="resize-handle top-right"></div>
+  <div class="resize-handle bottom-left"></div>
+  <div class="resize-handle bottom-right"></div>
+
+  <div class="lyric-container">
+    <div class="lyric-group current-group">
+      <div class="current-lyric" id="currentLyric">等待歌词...</div>
+      <div class="current-lyric-trans" id="currentLyricTrans"></div>
+    </div>
+    <div class="lyric-group next-group">
+      <div class="next-lyric" id="nextLyric"></div>
+      <div class="next-lyric-trans" id="nextLyricTrans"></div>
+    </div>
+  </div>
+
+  <!-- 控制按钮 -->
+  <div class="controls">
+    <button class="control-btn" id="fontSizeBtn" title="调整字体大小 (当前: 中)">
+      <span id="fontSizeIndicator">A</span>
+    </button>
+    <button class="control-btn" id="toggleNextBtn" title="显示/隐藏下一句">
+      <span>2</span>
+    </button>
+    <button class="control-btn" id="orientationBtn" title="切换方向">⇄</button>
+    <button class="control-btn" id="lockBtn" title="锁定/解锁（穿透点击）">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="14" height="14">
+        <path fill="currentColor" d="M384 96c0-35.3 28.7-64 64-64s64 28.7 64 64l0 32c0 17.7 14.3 32 32 32s32-14.3 32-32l0-32c0-70.7-57.3-128-128-128S320 25.3 320 96l0 64-160 0c-35.3 0-64 28.7-64 64l0 224c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-224c0-35.3-28.7-64-64-64l-32 0 0-64z"/>
+      </svg>
+    </button>
+    <button class="control-btn" id="closeBtn" title="关闭">✕</button>
+  </div>
+
+  <!-- 穿透模式提示 -->
+  <div class="lock-hint">已锁定 - 点击穿透</div>
+
+  <script src="lyric-window.js"></script>
+</body>
+</html>
+

@@ -4,12 +4,15 @@
       ref="audioRef"
       :src="audioUrl"
       crossorigin="anonymous"
+      preload="auto"
       @timeupdate="onTimeUpdate"
       @loadedmetadata="onLoadedMetadata"
       @ended="onEnded"
       @play="playerStore.isPlaying = true"
       @pause="playerStore.isPlaying = false"
       @error="onAudioError"
+      @seeking="onSeeking"
+      @seeked="onSeeked"
     />
 
     <div class="player-content">
@@ -139,13 +142,40 @@
               <path d="M307 34.8c-11.5 5.1-19 16.6-19 29.2l0 64-112 0C78.8 128 0 206.8 0 304C0 417.3 81.5 467.9 100.2 478.1c2.5 1.4 5.3 1.9 8.1 1.9c10.9 0 19.7-8.9 19.7-19.7c0-7.5-4.3-14.4-9.8-19.5C108.8 431.9 96 414.4 96 384c0-53 43-96 96-96l96 0 0 64c0 12.6 7.4 24.1 19 29.2s25 3 34.4-5.4l160-144c6.7-6.1 10.6-14.7 10.6-23.8s-3.8-17.7-10.6-23.8l-160-144c-9.4-8.5-22.9-10.6-34.4-5.4z"/>
             </svg>
           </button>
+          <!-- 桌面歌词按钮（仅在 Electron 环境显示） -->
+          <button
+            v-if="isElectronEnv"
+            @click="playerStore.toggleDesktopLyric"
+            class="control-btn lyric-btn"
+            :class="{ active: playerStore.showDesktopLyric, locked: playerStore.isLyricLocked }"
+            :title="getLyricButtonTitle()"
+          >
+            <!-- 已锁定：锁图标 -->
+            <svg v-if="playerStore.isLyricLocked" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" class="icon-svg">
+              <path fill="currentColor" d="M128 96l0 64 128 0 0-64c0-35.3-28.7-64-64-64s-64 28.7-64 64zM64 160l0-64C64 25.3 121.3-32 192-32S320 25.3 320 96l0 64c35.3 0 64 28.7 64 64l0 224c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 224c0-35.3 28.7-64 64-64z"/>
+            </svg>
+            <!-- 未锁定：字幕图标（打开/关闭都用这个） -->
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon-svg">
+              <path fill="currentColor" d="M0 128C0 92.7 28.7 64 64 64l384 0c35.3 0 64 28.7 64 64l0 256c0 35.3-28.7 64-64 64L64 448c-35.3 0-64-28.7-64-64L0 128zm152 80l32 0c4.4 0 8 3.6 8 8 0 13.3 10.7 24 24 24s24-10.7 24-24c0-30.9-25.1-56-56-56l-32 0c-30.9 0-56 25.1-56 56l0 80c0 30.9 25.1 56 56 56l32 0c30.9 0 56-25.1 56-56 0-13.3-10.7-24-24-24s-24 10.7-24 24c0 4.4-3.6 8-8 8l-32 0c-4.4 0-8-3.6-8-8l0-80c0-4.4 3.6-8 8-8zm168 8c0-4.4 3.6-8 8-8l32 0c4.4 0 8 3.6 8 8 0 13.3 10.7 24 24 24s24-10.7 24-24c0-30.9-25.1-56-56-56l-32 0c-30.9 0-56 25.1-56 56l0 80c0 30.9 25.1 56 56 56l32 0c30.9 0 56-25.1 56-56 0-13.3-10.7-24-24-24s-24 10.7-24 24c0 4.4-3.6 8-8 8l-32 0c-4.4 0-8-3.6-8-8l0-80z"/>
+            </svg>
+          </button>
         </div>
 
         <div class="progress-bar">
-          <span class="time">{{ formatTime(playerStore.currentTime) }}</span>
-          <div class="progress-container" @click="seek">
+          <span class="time">{{ formatTime(isDragging ? dragTime : playerStore.currentTime) }}</span>
+          <div
+            class="progress-container"
+            @mousedown="startDrag"
+            @touchstart="startDrag"
+            ref="progressContainerRef"
+          >
             <div class="progress-bg">
-              <div class="progress-fill" :style="{ width: playerStore.progress + '%' }"></div>
+              <div class="progress-fill" :style="{ width: (isDragging ? dragProgress : playerStore.progress) + '%' }"></div>
+              <div
+                class="progress-thumb"
+                :style="{ left: (isDragging ? dragProgress : playerStore.progress) + '%' }"
+                :class="{ dragging: isDragging }"
+              ></div>
             </div>
           </div>
           <span class="time">{{ formatTime(playerStore.duration) }}</span>
@@ -183,6 +213,7 @@ import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import { getSongUrl } from '@/api/netease'
 import { toast } from '@/utils/toast'
+import { isElectron } from '@/utils/electron-bridge'
 
 const router = useRouter()
 const playerStore = usePlayerStore()
@@ -194,6 +225,15 @@ const shouldUpdateTime = ref(false) // 控制是否更新播放进度
 const hasRestoredProgress = ref(false) // 标记是否已恢复进度
 const showSettingsMenu = ref(false) // 显示设置菜单（移动端）
 const showQualityMenu = ref(false) // 显示音质菜单（桌面端）
+const isElectronEnv = isElectron() // 检测是否在 Electron 环境中
+
+// 获取歌词按钮标题
+function getLyricButtonTitle() {
+  if (playerStore.isLyricLocked) {
+    return '解锁歌词窗口'
+  }
+  return playerStore.showDesktopLyric ? '关闭桌面歌词' : '打开桌面歌词'
+}
 
 // 跑马灯相关
 const songNameRef = ref<HTMLElement>()
@@ -435,7 +475,8 @@ async function shareMusic() {
 
 function onTimeUpdate() {
   // 只在允许更新时间时才更新 store 中的 currentTime
-  if (audioRef.value && shouldUpdateTime.value) {
+  // 并且音频必须真正开始播放（不在 seeking 状态）
+  if (audioRef.value && shouldUpdateTime.value && !isSeeking.value && !audioRef.value.paused) {
     playerStore.currentTime = audioRef.value.currentTime
   }
 }
@@ -484,13 +525,91 @@ function onAudioError(e: Event) {
   toast.error(errorMsg)
 }
 
-function seek(e: MouseEvent) {
-  const target = e.currentTarget as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const percent = (e.clientX - rect.left) / rect.width
-  if (audioRef.value) {
-    audioRef.value.currentTime = percent * playerStore.duration
+const isDragging = ref(false)
+const dragProgress = ref(0)
+const dragTime = ref(0)
+const progressContainerRef = ref<HTMLElement>()
+const isSeeking = ref(false)
+
+function startDrag(e: MouseEvent | TouchEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (!progressContainerRef.value || !audioRef.value) return
+
+  isDragging.value = true
+  const container = progressContainerRef.value
+  const rect = container.getBoundingClientRect()
+
+  const updateProgress = (clientX: number) => {
+    let percent = (clientX - rect.left) / rect.width
+    percent = Math.max(0, Math.min(1, percent)) // 限制在 0-1 之间
+
+    // 只更新视觉效果，不改变实际播放位置
+    dragProgress.value = percent * 100
+    dragTime.value = percent * playerStore.duration
   }
+
+  const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+    moveEvent.preventDefault()
+
+    let clientX: number
+    if (moveEvent instanceof MouseEvent) {
+      clientX = moveEvent.clientX
+    } else {
+      clientX = moveEvent.touches[0]?.clientX ?? 0
+    }
+
+    updateProgress(clientX)
+  }
+
+  const handleEnd = async () => {
+    // 松手时才真正跳转播放进度
+    if (audioRef.value) {
+      isSeeking.value = true
+      const wasPlaying = playerStore.isPlaying
+
+      try {
+        // 设置新的播放位置
+        audioRef.value.currentTime = dragTime.value
+
+        // 如果之前在播放，等待 seeked 事件后继续播放
+        if (wasPlaying && audioRef.value.paused) {
+          await audioRef.value.play()
+        }
+      } catch (error) {
+        console.error('跳转播放进度失败:', error)
+      }
+    }
+
+    isDragging.value = false
+    document.removeEventListener('mousemove', handleMove as any)
+    document.removeEventListener('mouseup', handleEnd)
+    document.removeEventListener('touchmove', handleMove as any, { passive: false } as any)
+    document.removeEventListener('touchend', handleEnd)
+  }
+
+  document.addEventListener('mousemove', handleMove as any)
+  document.addEventListener('mouseup', handleEnd)
+  document.addEventListener('touchmove', handleMove as any, { passive: false })
+  document.addEventListener('touchend', handleEnd)
+
+  // 立即更新一次位置
+  let clientX: number
+  if (e instanceof MouseEvent) {
+    clientX = e.clientX
+  } else {
+    clientX = e.touches[0]?.clientX ?? 0
+  }
+  updateProgress(clientX)
+}
+
+function onSeeking() {
+  isSeeking.value = true
+}
+
+function onSeeked() {
+  isSeeking.value = false
 }
 
 function updateVolume() {
@@ -1013,6 +1132,45 @@ watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
   color: #C1785A;
 }
 
+.lyric-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  width: 40px;
+  height: 40px;
+}
+
+.lyric-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.lyric-btn.active {
+  opacity: 1;
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.1);
+}
+
+.lyric-btn.locked {
+  opacity: 1;
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.lyric-btn .icon-svg {
+  width: 18px;
+  height: 18px;
+}
+
 .share-btn {
   background: none;
   border: none;
@@ -1054,13 +1212,15 @@ watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
   flex: 1;
   cursor: pointer;
   padding: 8px 0;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .progress-bg {
   height: 4px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
-  overflow: hidden;
   position: relative;
 }
 
@@ -1069,6 +1229,36 @@ watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
   background: linear-gradient(90deg, #8ABEB9 0%, #B7E5CD 100%);
   border-radius: 2px;
   transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+.progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2;
+}
+
+.progress-thumb.dragging {
+  transform: translate(-50%, -50%) scale(1.3);
+  opacity: 1;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.progress-container:hover .progress-thumb {
+  opacity: 1;
+}
+
+.progress-container:active .progress-thumb {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.2);
 }
 
 .right-controls {
@@ -1424,6 +1614,12 @@ watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
     height: 5px;
   }
 
+  .progress-thumb {
+    width: 14px;
+    height: 14px;
+    opacity: 1;
+  }
+
   .right-controls {
     width: 100%;
     justify-content: space-between;
@@ -1554,6 +1750,12 @@ watch([showSettingsMenu, showQualityMenu], ([showSettings, showQuality]) => {
 
   .progress-bg {
     height: 6px;
+  }
+
+  .progress-thumb {
+    width: 16px;
+    height: 16px;
+    opacity: 1;
   }
 }
 </style>

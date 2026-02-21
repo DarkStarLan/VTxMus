@@ -876,17 +876,28 @@ function scrollToLyric(index: number) {
       const targetLine = lines[index] as HTMLElement
 
       if (targetLine) {
-        // 计算目标位置，使歌词在容器中垂直居中
-        const containerHeight = container.clientHeight
-        const lineOffsetTop = targetLine.offsetTop
-        const lineHeight = targetLine.clientHeight
+        // 获取容器的可视高度（不包括 padding）
+        const containerRect = container.getBoundingClientRect()
+        const containerHeight = containerRect.height
 
-        // 让当前歌词行的中心点对齐到容器的中心点
-        const scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+        // 获取目标行相对于容器顶部的位置
+        const lineRect = targetLine.getBoundingClientRect()
+        const containerTop = containerRect.top
+        const lineTop = lineRect.top
+        const lineHeight = lineRect.height
+
+        // 计算当前滚动位置
+        const currentScroll = container.scrollTop
+
+        // 计算目标行相对于容器内容的偏移
+        const lineOffsetInContainer = lineTop - containerTop + currentScroll
+
+        // 让当前歌词行的中心点对齐到容器可视区域的中心点
+        const scrollTop = lineOffsetInContainer - (containerHeight / 2) + (lineHeight / 2)
 
         // 平滑滚动到目标位置
         container.scrollTo({
-          top: scrollTop, // 允许负值，浏览器会自动处理
+          top: Math.max(0, scrollTop), // 确保不小于0
           behavior: 'smooth'
         })
       }
@@ -899,17 +910,28 @@ function scrollToLyric(index: number) {
       const targetLine = lines[index] as HTMLElement
 
       if (targetLine) {
-        // 计算目标位置，使歌词在容器中垂直居中
-        const containerHeight = container.clientHeight
-        const lineOffsetTop = targetLine.offsetTop
-        const lineHeight = targetLine.clientHeight
+        // 获取容器的可视高度（不包括 padding）
+        const containerRect = container.getBoundingClientRect()
+        const containerHeight = containerRect.height
 
-        // 让当前歌词行的中心点对齐到容器的中心点
-        const scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+        // 获取目标行相对于容器顶部的位置
+        const lineRect = targetLine.getBoundingClientRect()
+        const containerTop = containerRect.top
+        const lineTop = lineRect.top
+        const lineHeight = lineRect.height
+
+        // 计算当前滚动位置
+        const currentScroll = container.scrollTop
+
+        // 计算目标行相对于容器内容的偏移
+        const lineOffsetInContainer = lineTop - containerTop + currentScroll
+
+        // 让当前歌词行的中心点对齐到容器可视区域的中心点
+        const scrollTop = lineOffsetInContainer - (containerHeight / 2) + (lineHeight / 2)
 
         // 平滑滚动到目标位置
         container.scrollTo({
-          top: scrollTop, // 允许负值，浏览器会自动处理
+          top: Math.max(0, scrollTop), // 确保不小于0
           behavior: 'smooth'
         })
       }
